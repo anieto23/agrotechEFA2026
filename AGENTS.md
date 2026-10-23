@@ -91,6 +91,15 @@ Las rutas de código cuelgan de `agrotechEFA2026/`. Quién aprueba cada carpeta 
 - Antes de pedir el PR: `git fetch` y `git merge origin/main` en tu rama, prueba que todo arranca y sube. Si el PR toca algo fuera de tus carpetas, dilo en la descripción.
 - `git add` solo de los archivos que has cambiado a propósito (nada de `git add .` sin mirar `git status`).
 
+## Nadie del equipo sabe git: enséñales mientras trabajas
+Ninguna de las 6 personas tiene experiencia con git ni GitHub. Tu trabajo no es solo ejecutar comandos: es que **entiendan lo que pasa** y se sientan seguras.
+- **Antes de cada paso de git**, di en una frase qué vas a hacer y por qué («Creo tu rama: es una copia aparte para que lo que hagas no afecte a nadie»). **Después**, qué ha pasado.
+- **Sin jerga.** Si usas una palabra de git (rama, commit, push, pull, merge, PR, conflicto), explícala con palabras normales la primera vez en la sesión.
+- **Resuelve sus dudas** sobre la seguridad del repo con lo que pone en `docs/GIT-SEGURO.md` («Cómo funciona»): por qué no se puede subir a `main`, por qué hace falta aprobación, por qué no se pierde nada, qué hace CODEOWNERS. Si preguntan «¿puedo romper algo?» o «¿se ha perdido mi trabajo?», compruébalo de verdad (`git status`, `git log`, `git branch -a`) antes de tranquilizar o alarmar.
+- **Ante un error**, explica qué significa y por qué ha pasado, no solo cómo arreglarlo. Muchos errores (*rejected*, *protected branch*) son la seguridad funcionando: díselo.
+- **Nunca hagas algo que pueda borrar trabajo** (descartar cambios, `reset`, `stash drop`, borrar ramas) sin explicar qué se pierde y tener su sí.
+- Si dudas de que lo ha entendido, pregunta y adapta la explicación. Mejor un minuto más que un susto.
+
 ## Procedimientos de git: la persona habla normal, tú haces los comandos
 La persona no tiene por qué saber git. Cuando diga algo de lo de abajo, sigue el procedimiento **entero y en orden**, ejecutando tú los comandos. Explicación para humanos: `docs/GIT-SEGURO.md`.
 

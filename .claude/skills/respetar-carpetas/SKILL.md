@@ -1,24 +1,18 @@
 ---
 name: respetar-carpetas
-description: Antes de crear, editar o borrar cualquier archivo del repo, comprueba que es de la persona que está trabajando (A, B, C o D) y, si es de otra, para y avisa en vez de tocarlo. Úsala SIEMPRE antes de modificar archivos en este proyecto.
+description: Antes de crear, editar o borrar cualquier archivo del repo, comprueba que es de la persona que está trabajando (A, B, C, D, E o F) y, si es de otra, para y avisa en vez de tocarlo. Úsala SIEMPRE antes de modificar archivos en este proyecto.
 ---
 
 # Respetar las carpetas de cada persona
 
-Cada persona es dueña de carpetas distintas (ver `docs/PLAN-EQUIPO.md`). No se pisan.
+Cada persona es dueña de carpetas distintas. No se pisan.
 
 ## Quién soy
-Por la rama: `feat/a-...` = A, `feat/b-...` = B, `feat/c-...` = C, `feat/d-...` = D. Si la rama no lo dice, pregunta al usuario una vez.
+Por la rama: `feat/a-...` = A, `feat/b-...` = B … `feat/f-...` = F. Si la rama no lo dice, pregunta al usuario una vez.
 
-## Propietarios (rutas bajo `agrotechEFA2026/` salvo las indicadas)
-| Persona | Archivos suyos |
-|---|---|
-| A | `db/`, `api/`, `migrations/`; además gestiona los compartidos |
-| B | `pages/dashboard.py`, `pages/historico.py`, `components/charts.py`, `components/sensor_card.py`, `state/dashboard_state.py` |
-| C | `pages/parcelas.py`, `pages/sensores.py`, `pages/alertas.py`, `pages/login.py`, `components/layout.py`, `components/forms.py`, `state/gestion_state.py`, `state/auth_state.py`, `services/alertas.py` |
-| D | `scripts/`, `firmware/`, `services/riego.py`, `services/telegram.py`, `services/export.py`, `Dockerfile`, `docs/hardware.md` |
-| Compartidos (solo PR pequeño avisando; los gestiona A) | `agrotechEFA2026.py`, `rxconfig.py`, `pyproject.toml` |
-| Cada uno | sus propios `tests/` y su sección de README y `docs/equipo/<letra>-*/` |
+## Propietarios
+La tabla buena está en `AGENTS.md`, apartado «Reparto» (y quién aprueba cada ruta, en `.github/CODEOWNERS`). Léela de ahí; no la copies aquí para que no se quede antigua.
+Además: compartidos (`agrotechEFA2026.py`, `rxconfig.py`, `pyproject.toml`, `docs/contrato.md`) solo con PR pequeño avisando, los gestiona A; cada uno es dueño de sus propios `tests/`, su sección de README y su `docs/equipo/<letra>-*/`.
 
 ## Antes de cada edición
 1. Mira la ruta del archivo. ¿Es de mi persona? Entonces sigue.

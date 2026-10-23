@@ -39,6 +39,16 @@ Resumen: **tus carpetas** (no os cruzáis) + **ramas** (cada uno en su copia) + 
 
 ---
 
+## Primer día (cada persona, una vez)
+
+1. **Acepta la invitación** al repositorio que te llega al correo de GitHub (si no te ha llegado, pídesela a anieto23).
+2. **Descarga el proyecto.** En VS Code: *Ctrl+Shift+P* → «Git: Clone» → pega `https://github.com/anieto23/agrotechEFA2026.git` → elige carpeta → *Abrir*. (Si ya lo tenías descargado, ábrelo y en la terminal escribe `git pull` para traer lo último).
+3. **Abre tu IA en esa carpeta** y pega este mensaje:
+   > Soy la persona **X** del proyecto Agrotech y no sé usar git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md` y `docs/PLAN-EQUIPO.md`. Comprueba que git sabe mi nombre y correo, trae lo último de main y explícame en 5 líneas cómo vamos a trabajar sin pisar a nadie.
+4. La primera vez que tu IA suba algo, se abrirá una ventana para **iniciar sesión en GitHub**: hazlo tú (nunca le des tu contraseña a la IA).
+
+A partir de ahí, cada día empieza con: «Soy la persona X, empiezo con <tarea>».
+
 ## Trabajar con tu IA (lo normal)
 
 Tu IA lee sola `AGENTS.md` al abrir el proyecto: Claude Code (vía `CLAUDE.md`), Copilot (vía `.github/copilot-instructions.md`), Codex y Cursor. Ahí tiene los pasos exactos de git. Tú solo hablas normal:
