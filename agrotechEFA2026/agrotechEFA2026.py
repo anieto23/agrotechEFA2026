@@ -24,10 +24,10 @@ def sensor_card(
                 rx.box(
                     rx.icon(
                         tag=icon,
-                        size=24,
+                        size=32,
                         color=color,
                     ),
-                    padding="10px",
+                    padding="5px",
                     border_radius="12px",
                     background="#CACACA",
                 ),
