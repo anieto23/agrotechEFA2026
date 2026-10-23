@@ -13,7 +13,7 @@
 1. `git pull`. Mirar los PR abiertos.
 2. Pedir a Claude la tarea del día de tu guion.
 3. Probar lo que ha hecho (la web, el comando, el móvil). Si funciona → "súbelo como PR".
-4. Revisar **un PR de otra persona** (rotamos: A→B→C→D→A). Aprobar solo si lo has probado.
+4. Revisar **un PR de otra persona** (rotamos: A→B→C→D→E→F→A). Aprobar solo si lo has probado.
 
 ## Cómo revisar un PR (3 preguntas)
 - ¿Lo he arrancado y hace lo que dice la descripción?

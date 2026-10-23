@@ -1,0 +1,64 @@
+# Quién aprueba los cambios de cada carpeta.
+# Si un PR toca una de estas rutas, GitHub pide la aprobación de una de las
+# personas de esa línea (la dueña o su compañera de revisión, por la rotación
+# A→B→C→D→E→F→A). Así la dueña también puede sacar adelante sus propios PR.
+#
+# PENDIENTE: cambiar cada @PERSONA_X por el usuario real de GitHub
+# (por ejemplo @anieto23). Solo funciona con la protección de main activada
+# y "Require review from Code Owners" marcado (ver docs/GIT-SEGURO.md).
+# Si varias líneas encajan, manda la ÚLTIMA.
+
+# Todo lo que no tenga dueño (archivos compartidos incluidos): A y F
+*                                       @PERSONA_A @PERSONA_F
+
+# Archivos compartidos y contrato: los gestiona A
+/agrotechEFA2026/agrotechEFA2026.py     @PERSONA_A @PERSONA_F
+/rxconfig.py                            @PERSONA_A @PERSONA_F
+/pyproject.toml                         @PERSONA_A @PERSONA_F
+/docs/contrato.md                       @PERSONA_A @PERSONA_F
+
+# A – Backend y datos
+/agrotechEFA2026/db/                    @PERSONA_A @PERSONA_B
+/agrotechEFA2026/api/                   @PERSONA_A @PERSONA_B
+/agrotechEFA2026/migrations/            @PERSONA_A @PERSONA_B
+/docs/equipo/A-backend/                 @PERSONA_A @PERSONA_B
+
+# B – Panel y gráficos
+/agrotechEFA2026/pages/dashboard.py         @PERSONA_B @PERSONA_C
+/agrotechEFA2026/pages/historico.py         @PERSONA_B @PERSONA_C
+/agrotechEFA2026/components/charts.py       @PERSONA_B @PERSONA_C
+/agrotechEFA2026/components/sensor_card.py  @PERSONA_B @PERSONA_C
+/agrotechEFA2026/state/dashboard_state.py   @PERSONA_B @PERSONA_C
+/docs/equipo/B-panel/                       @PERSONA_B @PERSONA_C
+
+# C – Gestión y alertas
+/agrotechEFA2026/pages/login.py             @PERSONA_C @PERSONA_D
+/agrotechEFA2026/pages/parcelas.py          @PERSONA_C @PERSONA_D
+/agrotechEFA2026/pages/sensores.py          @PERSONA_C @PERSONA_D
+/agrotechEFA2026/pages/alertas.py           @PERSONA_C @PERSONA_D
+/agrotechEFA2026/components/layout.py       @PERSONA_C @PERSONA_D
+/agrotechEFA2026/components/forms.py        @PERSONA_C @PERSONA_D
+/agrotechEFA2026/state/gestion_state.py     @PERSONA_C @PERSONA_D
+/agrotechEFA2026/state/auth_state.py        @PERSONA_C @PERSONA_D
+/agrotechEFA2026/services/alertas.py        @PERSONA_C @PERSONA_D
+/docs/equipo/C-gestion/                     @PERSONA_C @PERSONA_D
+
+# D – Sensores (hardware y simulador)
+/scripts/                               @PERSONA_D @PERSONA_E
+/firmware/                              @PERSONA_D @PERSONA_E
+/docs/hardware.md                       @PERSONA_D @PERSONA_E
+/docs/equipo/D-sensores/                @PERSONA_D @PERSONA_E
+
+# E – Inteligencia y avisos
+/agrotechEFA2026/services/riego.py      @PERSONA_E @PERSONA_F
+/agrotechEFA2026/services/telegram.py   @PERSONA_E @PERSONA_F
+/agrotechEFA2026/services/export.py     @PERSONA_E @PERSONA_F
+/docs/equipo/E-inteligencia/            @PERSONA_E @PERSONA_F
+
+# F – Calidad, despliegue y entrega
+/.github/                               @PERSONA_F @PERSONA_A
+/Dockerfile                             @PERSONA_F @PERSONA_A
+/README.md                              @PERSONA_F @PERSONA_A
+/docs/arquitectura.md                   @PERSONA_F @PERSONA_A
+/docs/presentacion/                     @PERSONA_F @PERSONA_A
+/docs/equipo/F-calidad/                 @PERSONA_F @PERSONA_A

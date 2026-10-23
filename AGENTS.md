@@ -58,13 +58,13 @@ When you need to compile, run, reload, or debug a Reflex application, follow the
 # Instrucciones del equipo Agrotech (para cualquier IA)
 
 ## Qué es esto
-Proyecto del **II Reto Agrotech Startup 2026** (EFA El Soto, Motril). Web app **Python + Reflex** que monitoriza en tiempo real los sensores de una parcela. Equipo de 4 personas (A, B, C, D) que usan IA para casi todo. Entrega **8-dic-2026**, final **16-dic-2026**. Objetivo: **ganar**.
+Proyecto del **II Reto Agrotech Startup 2026** (EFA El Soto, Motril). Web app **Python + Reflex** que monitoriza en tiempo real los sensores de una parcela. Equipo de 6 personas (A, B, C, D, E, F) que usan IA para casi todo. Entrega **8-dic-2026**, final **16-dic-2026**. Objetivo: **ganar**.
 Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.md`.
 
 ## Lo primero que haces en cada sesión
-1. Pregunta (o lee en el mensaje) **qué persona eres a tu cargo: A, B, C o D**. Si no lo sabes, pregunta; no adivines.
-2. `git pull` y `git status`. Lee `docs/contrato.md` si ha cambiado.
-3. Trabaja en rama `feat/<persona>-<tema>`. **Nunca en `main`.**
+1. Pregunta (o lee en el mensaje) **qué persona eres a tu cargo: A, B, C, D, E o F**. Si no lo sabes, pregunta; no adivines.
+2. `git switch main`, `git pull` y `git status`. Lee `docs/contrato.md` si ha cambiado.
+3. Trabaja en rama `feat/<persona>-<tema>` creada desde `main` recién actualizada. **Nunca en `main`.** Sigue `docs/GIT-SEGURO.md`.
 4. Antes de escribir código de Reflex, usa la skill `reflex-docs` (ver el bloque de arriba). No uses la memoria para APIs de Reflex: la versión es 0.10 y cambia.
 
 ## Reparto: solo editas TUS carpetas
@@ -73,11 +73,23 @@ Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.m
 | A – Backend y datos | `db/`, `api/`, `migrations/` |
 | B – Panel y gráficos | `pages/dashboard.py`, `pages/historico.py`, `components/charts.py`, `components/sensor_card.py`, `state/dashboard_state.py` |
 | C – Gestión y alertas | `pages/login.py`, `pages/parcelas.py`, `pages/sensores.py`, `pages/alertas.py`, `components/layout.py`, `components/forms.py`, `state/gestion_state.py`, `state/auth_state.py`, `services/alertas.py` |
-| D – Sensores e inteligencia | `scripts/`, `firmware/`, `services/riego.py`, `services/telegram.py`, `services/export.py`, `Dockerfile`, `docs/hardware.md` |
+| D – Sensores (hardware y simulador) | `scripts/`, `firmware/`, `docs/hardware.md` |
+| E – Inteligencia y avisos | `services/riego.py`, `services/telegram.py`, `services/export.py` |
+| F – Calidad, despliegue y entrega | `.github/` (CI, `CODEOWNERS`), `Dockerfile`, `README.md` (coordina las secciones), `docs/arquitectura.md`, `docs/presentacion/` |
+
+Las rutas de código cuelgan de `agrotechEFA2026/`. Quién aprueba cada carpeta está en `.github/CODEOWNERS`.
 
 - **Carpeta ajena = no se toca.** Si necesitas un cambio ahí, dilo a la persona y deja escrito qué función o campo necesitas. Si es urgente, propón el cambio como PR pequeño a esa persona.
 - **Archivos compartidos** (`agrotechEFA2026.py`, `rxconfig.py`, `pyproject.toml`, `docs/contrato.md`): solo con PR pequeño, avisando a todos. Los gestiona A.
-- Nunca cambies el **contrato** (tablas, endpoints, JSON) por tu cuenta. Se propone en `docs/contrato.md` y los 4 lo aprueban.
+- Nunca cambies el **contrato** (tablas, endpoints, JSON) por tu cuenta. Se propone en `docs/contrato.md` y los 6 lo aprueban.
+
+## Git sin pisar a nadie (obligatorio)
+- **Prohibido:** `git push --force` (ni `--force-with-lease`), `git reset --hard` sobre trabajo subido, `git rebase` de ramas ya subidas, borrar ramas ajenas, subir a `main`.
+- **Si `git push` es rechazado** ("rejected", "fetch first"): no fuerces. Haz `git pull` en tu rama y vuelve a subir.
+- **Conflictos:** nunca elijas "lo mío" o "lo suyo" a ciegas. Si el conflicto está en una carpeta ajena o en un archivo compartido, **para y avisa a la persona**; enséñale las dos versiones y que decida. Tras resolver, arranca la app y pasa los tests antes de subir.
+- **No borres ni muevas archivos** que no sean de tu carpeta, aunque parezcan sin usar.
+- Antes de pedir el PR: `git fetch` y `git merge origin/main` en tu rama, prueba que todo arranca y sube. Si el PR toca algo fuera de tus carpetas, dilo en la descripción.
+- `git add` solo de los archivos que has cambiado a propósito (nada de `git add .` sin mirar `git status`).
 
 ## Cómo te comportas con la persona
 - Habla **español**, claro y corto. Son estudiantes de FP: explica qué hiciste en 2-3 líneas, sin jerga innecesaria.
