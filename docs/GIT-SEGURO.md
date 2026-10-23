@@ -1,157 +1,107 @@
-# Git seguro: que nadie pise el trabajo de nadie
+# Cómo trabajamos con Git sin pisarnos
 
-Guía para los 6. Primero **cómo funciona** la seguridad, luego **cómo hacer los commits** cada día, y al final **qué hacer si algo sale mal**.
+Guía para los 6. Nadie tiene que saber Git: **vuestra IA lo hace y os lo explica**. Aquí está lo que hace, para que lo entendáis y sepáis qué pedirle.
 
-## Estado (revisado el 23-10-2026)
+## La forma de trabajar en 5 frases
 
-| Qué | Estado |
-|---|---|
-| Repositorio público (así la protección funciona sin pagar) | Hecho |
-| `main` protegida: no se puede subir directo, hace falta PR con aprobación | Hecho (el PR #2 aparecía «bloqueado» hasta tener aprobación) |
-| Al unir un PR se borra su rama en GitHub | Hecho |
-| Colaboradores con permiso de escritura | **4 de 6**: anieto23 (dueña), efapro, mhjosemi-sudo, rmolino23-art. Faltan 2 |
-| `.github/CODEOWNERS` con los usuarios reales | **Pendiente**: aún tiene `@PERSONA_X` y GitHub lo ignora |
-| Prohibir `--force`, prohibir borrar `main` y «no saltarse las reglas» | Hay que confirmarlo: solo lo ve anieto23 (punto 1.3) |
+1. **Todos podemos ver y cambiar todo.** No hay carpetas prohibidas; el reparto de `docs/PLAN-EQUIPO.md` solo dice quién se encarga de qué.
+2. **Cada tarea se hace en una rama nueva y corta** (uno o dos días), que empieza siendo una copia de `main` con lo último de todos.
+3. **Al acabar, abres un PR y lo unes tú** (botón *Merge*), sin esperar a nadie, si GitHub dice que no hay conflictos.
+4. **La rama se borra** al unirla y la siguiente tarea empieza con otra rama nueva.
+5. **GitHub no deja subir directo a `main`, ni forzar, ni borrar `main`.** Por eso nada de lo subido se puede perder.
 
 ---
 
 ## Cómo funciona (en 2 minutos)
 
-**Hay dos copias del proyecto**: la tuya (tu ordenador) y la de GitHub (la del equipo). Lo que haces en tu ordenador no afecta a nadie hasta que lo subes (`git push`).
+**Palabras que vais a oír:**
+| Palabra | Qué es |
+|---|---|
+| **`main`** | La versión buena del proyecto, la que se entrega |
+| **Rama** | Una copia aparte de `main` para hacer una tarea. Lo que haces en ella no afecta a nadie |
+| **Commit** | Guardar un punto de tu trabajo con una frase que dice qué has hecho |
+| **Push** (subir) | Mandar tus commits a GitHub. Hasta entonces solo están en tu ordenador |
+| **Pull** (traer) | Bajar lo que han subido los demás |
+| **PR** (*pull request*) | Pedir en GitHub que tu rama entre en `main`. Muestra qué cambia y si choca con algo |
+| **Merge** (unir) | Meter los cambios de tu rama en `main` |
+| **Conflicto** | Dos personas han cambiado *las mismas líneas* y Git pregunta con cuál quedarse |
 
-**Ramas.** `main` es la versión buena, la que se entrega. Cada tarea se hace en una **rama** propia (`feat/b-grafico-humedad`), que es una copia aparte. Puedes romper tu rama todo lo que quieras: `main` y las ramas de los demás no cambian.
+**¿Por qué no nos pisamos si todos tocamos todo?**
+- **Git junta los cambios solo.** Si tú cambias un archivo y otra persona cambia otro, o el mismo archivo en otras líneas, Git une las dos cosas sin preguntar y no se pierde nada.
+- **Solo pregunta si hay conflicto** (mismas líneas). Entonces tu IA te enseña las dos versiones y os quedáis con lo bueno de las dos. Nunca borra lo del otro sin preguntarte.
+- **Las ramas cortas hacen que casi no haya conflictos.** Cada tarea empieza desde el `main` de ese día, que ya trae lo de todos.
+- **Si alguien subió antes que tú, Git rechaza tu subida** («rejected») hasta que traes lo suyo. No puede machacarlo.
+- **GitHub protege `main`:** nadie puede subir directo (solo por PR), ni forzar una subida (`--force`, lo único que borra trabajo ya subido), ni borrarla.
+- **Todo queda en el historial.** Si un PR estropea algo, su botón **Revert** lo deshace.
 
-**Git nunca borra en silencio.** Si subes y alguien había subido antes a la misma rama, GitHub **rechaza** tu subida («rejected») y te obliga a traer lo suyo primero (`git pull`). Git junta las dos versiones solo; únicamente pregunta (**conflicto**) si los dos habéis cambiado *las mismas líneas del mismo archivo*. Como cada uno tiene sus carpetas, eso casi nunca pasará.
-
-**Pull request (PR).** Para meter tu rama en `main` abres un PR: «quiero unir esto». Las reglas de GitHub (no dependen de la buena voluntad de nadie):
-
-1. **Nadie puede subir directo a `main`**, ni tú, ni tu IA, ni por error. Solo entra por PR.
-2. **Un PR necesita 1 aprobación de otra persona.** Tú no puedes aprobar tu propio PR.
-3. **Si cambias el PR después de aprobado**, la aprobación se anula y hay que volver a aprobar. Nadie cuela nada.
-4. **`CODEOWNERS`** (cuando tenga los nombres): si tu PR toca la carpeta de otro, GitHub exige que apruebe **el dueño de esa carpeta** (o su compañero de revisión). Por eso no se puede cambiar lo de otro sin que se entere.
-5. **Prohibido forzar (`--force`) y borrar `main`.** Son las dos únicas formas de destruir trabajo ya subido, y GitHub las bloquea.
-
-**Todo queda en el historial.** Cada versión de cada archivo que haya estado en `main` sigue guardada. Si algo se rompe o se borra, se recupera.
-
-**Tu IA** lee `AGENTS.md`, que le prohíbe forzar, tocar carpetas ajenas o resolver conflictos a ciegas. Aunque se equivoque, las reglas de GitHub de arriba la paran.
-
-Resumen: **tus carpetas** (no os cruzáis) + **ramas** (cada uno en su copia) + **PR con aprobación** (nada entra sin que otro lo vea) + **sin `--force`** (nada se destruye).
+Resumen: **ramas cortas** + **PR que une cada uno** + **sin `--force`** = todos tocáis todo y nada se pierde.
 
 ---
 
 ## Primer día (cada persona, una vez)
 
-1. **Acepta la invitación** al repositorio que te llega al correo de GitHub (si no te ha llegado, pídesela a anieto23).
-2. **Descarga el proyecto.** En VS Code: *Ctrl+Shift+P* → «Git: Clone» → pega `https://github.com/anieto23/agrotechEFA2026.git` → elige carpeta → *Abrir*. (Si ya lo tenías descargado, ábrelo y en la terminal escribe `git pull` para traer lo último).
-3. **Abre tu IA en esa carpeta** y pega este mensaje:
-   > Soy la persona **X** del proyecto Agrotech y no sé usar git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md` y `docs/PLAN-EQUIPO.md`. Comprueba que git sabe mi nombre y correo, trae lo último de main y explícame en 5 líneas cómo vamos a trabajar sin pisar a nadie.
+1. **Acepta la invitación** al repositorio que te llega al correo de GitHub (si no te llega, pídesela a anieto23).
+2. **Descarga el proyecto.** En VS Code: *Ctrl+Shift+P* → «Git: Clone» → pega `https://github.com/anieto23/agrotechEFA2026.git` → elige carpeta → *Abrir*. Si ya lo tenías, ábrelo y en la terminal escribe `git pull`.
+3. **Abre tu IA en esa carpeta** y pega:
+   > Soy la persona **X** del proyecto Agrotech y no sé usar git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md` y `docs/PLAN-EQUIPO.md`. Comprueba que git sabe mi nombre y correo, trae lo último de main y explícame cómo vamos a trabajar.
 4. La primera vez que tu IA suba algo, se abrirá una ventana para **iniciar sesión en GitHub**: hazlo tú (nunca le des tu contraseña a la IA).
 
-A partir de ahí, cada día empieza con: «Soy la persona X, empiezo con <tarea>».
+---
 
-## Trabajar con tu IA (lo normal)
+## Trabajar con tu IA (cada día)
 
-Tu IA lee sola `AGENTS.md` al abrir el proyecto: Claude Code (vía `CLAUDE.md`), Copilot (vía `.github/copilot-instructions.md`), Codex y Cursor. Ahí tiene los pasos exactos de git. Tú solo hablas normal:
+Tu IA lee sola `AGENTS.md` al abrir el proyecto (Claude Code, Copilot, Codex, Cursor). Ahí tiene los pasos de Git y la orden de explicártelos. Tú hablas normal:
 
 | Tú dices | Tu IA hace |
 |---|---|
-| «Soy la persona B, empiezo con el gráfico de humedad» | Trae lo último de `main` y crea tu rama `feat/b-grafico-humedad` |
-| «Súbelo» / «haz el commit» / «ya he terminado» | Revisa qué has cambiado, deja fuera lo que no es tuyo o es secreto, pasa los tests, hace el commit, trae lo de los demás, sube y te da el enlace del PR con el título y la descripción para pegar |
-| «Ya me lo han aprobado» | Vuelve a `main`, lo actualiza y borra tu rama local |
-| «Revisa el PR de Juan» | Descarga su rama, la prueba y te dice si está bien |
-| Pega un error de git | Te explica qué pasa y lo arregla sin borrar nada |
+| «Soy la persona B, empiezo con el gráfico de humedad» | Trae lo último de `main` y te crea la rama `feat/b-grafico-humedad` |
+| «Actualiza mi rama» | Trae a tu rama lo nuevo de los demás (hazlo si llevas más de un día) |
+| «Súbelo» / «ya he terminado» | Revisa qué has cambiado y deja fuera lo que no querías o es secreto. Pasa los tests, guarda, trae lo de los demás, sube y te da el enlace del PR con el título y la descripción |
+| «Ya lo he unido» | Vuelve a `main`, lo actualiza y borra la rama |
+| «Échale un vistazo al PR de Juan» | Descarga su rama, la prueba y te dice si está bien |
+| «¿Puedo romper algo?» / «¿se ha perdido mi trabajo?» | Lo comprueba de verdad y te lo explica |
+| Pegas un error de Git | Te explica qué significa y lo arregla sin borrar nada |
 
-**Lo único que haces tú**: abrir el PR en GitHub con tu cuenta (el enlace te lo da tu IA), pedir revisión a tu compañero y aprobar los PR de otros después de probarlos.
+**Lo que haces tú en GitHub** (con el enlace que te da tu IA):
+1. **Create pull request**.
+2. Abajo del PR: si pone **«This branch has no conflicts with the base branch»** → **Merge pull request** → **Confirm merge**.
+3. Si pone que hay conflictos, no lo unas: dile a tu IA «hay conflictos en el PR».
+4. Si el cambio es grande o toca algo de lo que se encarga otra persona, avisa por el grupo o pide que alguien le eche un vistazo antes. No es obligatorio, pero ayuda.
 
-**Si tu IA te propone `--force`, borrar cambios o tocar la carpeta de otro, dile que no** y que siga `AGENTS.md`. Aunque lo intentara, GitHub lo bloquearía en `main`.
+**Si tu IA te propone `--force`, borrar cambios o «descartar» algo que no entiendes, dile que no** y que te lo explique. En `main` GitHub lo bloquearía igualmente.
 
-Con otra IA que no lea `AGENTS.md` sola (por ejemplo ChatGPT en el navegador), empieza con: «Lee AGENTS.md y docs/GIT-SEGURO.md de este proyecto y síguelos».
-
-## Cómo hacer los commits a mano (lo que hace tu IA por dentro)
-
-Si no usas IA, o para entender lo que hace, estos son los pasos.
-
-### 1. Al empezar: trae lo último y crea tu rama
-```
-git switch main
-git pull
-git switch -c feat/<letra>-<tema>
-```
-Ejemplo: `feat/b-grafico-humedad`. **Una rama = una tarea pequeña** (de unas horas, no de una semana).
-
-Si sigues una rama de ayer: `git switch feat/<letra>-<tema>` y luego `git merge main` (para traer lo nuevo de los demás).
-
-### 2. Mientras trabajas: commits pequeños
-```
-git status                       # mira QUÉ archivos has cambiado
-git add <tus archivos>           # solo los tuyos, uno a uno o tu carpeta
-git commit -m "Añade gráfico de humedad del suelo"
-git push -u origin feat/<letra>-<tema>    # la primera vez; luego basta con: git push
-```
-- **Mira `git status` antes de `git add`.** Si aparece un archivo que no es tuyo o que no querías tocar, no lo añadas y pregunta.
-- **Mensaje:** en español, empieza por verbo, dice *qué* cambia: «Añade…», «Corrige…», «Quita…». Mal: «cambios», «arreglos», «asdf».
-- **Haz `git push` a menudo** (al menos al acabar el día). Lo subido a tu rama está a salvo aunque se rompa tu ordenador.
-- Nunca subas `.env`, contraseñas ni tokens (el `.gitignore` ya lo evita; no lo fuerces).
-
-### 3. Para entregar: abre TÚ el PR
-1. Antes, trae lo último de `main` a tu rama y comprueba que todo sigue funcionando:
-   ```
-   git fetch
-   git merge origin/main
-   python -m reflex run        # ¿arranca?
-   python -m pytest            # ¿pasan los tests?
-   git push
-   ```
-2. En GitHub sale el botón **Compare & pull request**. Ábrelo **con tu cuenta** (si lo abre otro, GitHub lo cuenta como suyo y podrías acabar aprobando tu propio trabajo).
-3. Título claro y en la descripción: **qué cambia**, **cómo probarlo** y si toca algo fuera de tus carpetas.
-4. A la derecha, **Reviewers** → tu compañero de rotación (A→B→C→D→E→F→A).
-5. Cuando lo apruebe → **Merge pull request**. La rama se borra sola en GitHub. En tu ordenador:
-   ```
-   git switch main
-   git pull
-   git branch -d feat/<letra>-<tema>
-   ```
-
-### 4. Revisar el PR de otro
-```
-git fetch
-git switch <su-rama>
-python -m reflex run
-```
-Comprueba que hace lo que dice, que solo toca sus carpetas y que no hay claves en el código. Si todo bien → *Review changes* → **Approve**. Si no → **Request changes** explicando qué falla. Luego vuelve a tu rama (`git switch feat/<tu-rama>`).
+Con una IA que no lea `AGENTS.md` sola (por ejemplo ChatGPT en el navegador), empieza con: «Lee AGENTS.md y docs/GIT-SEGURO.md de este proyecto y síguelos».
 
 ---
 
 ## Si algo sale mal
 
-| Pasa esto | Haz esto | Nunca |
+| Pasa esto | Qué significa | Qué hacer |
 |---|---|---|
-| `git push` dice *rejected* o *fetch first* | `git pull` en tu rama y vuelve a subir | `git push --force` |
-| *CONFLICT* al hacer pull o merge | Si es tu carpeta, mira las dos versiones y deja lo correcto de ambas. Si es de otro, **para y avísale** | Elegir «lo mío» a ciegas |
-| Has trabajado en `main` sin querer | `git switch -c feat/<letra>-<tema>`: te llevas los cambios a una rama nueva | Intentar subir a `main` |
-| Algo de `main` ha desaparecido o se ha roto | Avisa en el grupo. En el PR que lo causó, botón **Revert**: crea un PR que lo deshace | Copiar y pegar encima a mano |
-| Tu IA propone `--force`, `reset --hard`, `rebase` o borrar ramas | Dile que no y que siga `AGENTS.md` | Aceptar sin entenderlo |
-| Necesitas un cambio en la carpeta de otro | Díselo (qué función o dato necesitas). Si es urgente, PR pequeño y que lo apruebe él | Cambiarlo tú «que es un momento» |
+| *rejected* / *fetch first* al subir | Alguien subió antes a esa rama | Tu IA hace `git pull` y vuelve a subir. Nunca `--force` |
+| *protected branch* | Intentabas subir directo a `main` y la seguridad lo ha parado | Tu IA pasa tus cambios a una rama y sube esa |
+| *CONFLICT* | Tú y otra persona habéis cambiado las mismas líneas | Tu IA te enseña las dos versiones y os quedáis con lo bueno de ambas. Si no sabes qué quería la otra persona, pregúntale |
+| Has trabajado en `main` sin querer | Aún no ha pasado nada: está solo en tu ordenador | Tu IA crea una rama y se lleva tus cambios |
+| Algo de `main` se ha roto | Un PR ha metido un fallo | Avisa en el grupo. En ese PR, botón **Revert** |
+| No sabes en qué rama estás o qué has cambiado | — | Pregúntale a tu IA: «¿en qué rama estoy y qué he cambiado?» |
 
 ---
 
-## Parte para anieto23 (dueña del repositorio)
+## Para anieto23 (dueña del repositorio), una vez
 
-### 1.1 Invitar a los 2 que faltan
-Settings → **Collaborators** → **Add people**, rol **Write** (no Admin). Que acepten desde el correo.
+### Invitar a los 6
+Settings → **Collaborators** → **Add people**, rol **Write** (no Admin). Ahora están anieto23, efapro, mhjosemi-sudo y rmolino23-art: **faltan 2**.
 
-### 1.2 Poner los nombres en CODEOWNERS
-Decidid quién es cada letra y cambiad cada `@PERSONA_X` de `.github/CODEOWNERS` por su usuario (por PR, como todo). Mientras no se haga, GitHub da error en ese archivo y la regla 4 no funciona.
-
-### 1.3 Revisar la protección de `main`
-Settings → **Branches** → regla de `main` → **Edit**. Debe estar así:
+### Protección de `main`
+Settings → **Branches** → regla de `main` → **Edit**. Debe quedar así:
 - [x] **Require a pull request before merging**
-  - [x] **Require approvals** → `1`
-  - [x] **Dismiss stale pull request approvals when new commits are pushed**
-  - [x] **Require review from Code Owners**
-- [x] **Require conversation resolution before merging**
-- [x] **Do not allow bypassing the above settings** (si no, la dueña puede saltarse todo sin darse cuenta)
+  - [ ] *Require approvals* → **sin marcar** (cada uno une su PR)
+  - [ ] *Require review from Code Owners* → **sin marcar**
+- [x] **Do not allow bypassing the above settings** (que la dueña tampoco suba directo sin querer)
 - [ ] *Allow force pushes* → **sin marcar**
 - [ ] *Allow deletions* → **sin marcar**
 
-(Si se usa *Rulesets* en vez de la regla clásica: *Restrict deletions*, *Block force pushes* y *Require a pull request* con lo mismo, y la lista de *Bypass* vacía.)
+Pulsar **Save changes**. (Si se usa *Rulesets*: *Restrict deletions*, *Block force pushes* y *Require a pull request before merging* con 0 aprobaciones, y la lista de *Bypass* vacía).
+
+### Comprobarlo
+Que cualquiera le diga a su IA: «comprueba que no puedo subir directo a main sin estropear nada». Debe salir *protected branch*.

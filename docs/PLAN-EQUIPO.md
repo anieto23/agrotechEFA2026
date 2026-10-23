@@ -9,10 +9,10 @@ Funcionalidad 40 · código 15 · UI/UX 15 · docs 10 · git 10 · extras 10. Ha
 3. **Alertas** (aviso visual + Telegram) y **exportar CSV/PDF** del histórico.
 Extras baratos: modo claro/oscuro, PWA instalable en móvil, despliegue público, vídeo demo.
 
-## Reparto: cada persona es dueña de CARPETAS distintas (así no se pisan)
+## Reparto: quién se encarga de qué (todos podéis tocar todo)
 Estructura del código (`agrotechEFA2026/`):
 
-| Persona | Rol | Es dueña de (solo ella edita) |
+| Persona | Rol | Se encarga de (orientativo: cualquiera puede cambiarlo, avisando si es mucho) |
 |---|---|---|
 | **A** | Backend y datos | `db/` (modelos, sesión, seed), `api/` (REST, login/roles, WebSocket), `migrations/` |
 | **B** | Panel y gráficos | `pages/dashboard.py`, `pages/historico.py`, `components/charts.py`, `components/sensor_card.py`, `state/dashboard_state.py` |
@@ -21,7 +21,7 @@ Estructura del código (`agrotechEFA2026/`):
 | **E** | Inteligencia y avisos (diferenciales 2 y 3) | `services/riego.py` (recomendación de riego), `services/telegram.py` (avisos), `services/export.py` (CSV/PDF) |
 | **F** | Calidad, despliegue y entrega | `.github/` (CI, `CODEOWNERS`), `Dockerfile`/despliegue público, `README.md` (une las secciones), `docs/arquitectura.md`, `docs/presentacion/` (diapositivas y vídeo) |
 
-**Compartido por los 6 (nadie es "el de comprobar"):** cada uno hace los **tests de su carpeta**, escribe **su sección del README** y del documento de arquitectura, y **aprueba los PR de otro** (rotando). CI, protección de `main` y presentación/vídeo: Claude lo prepara y presenta cada uno su parte en la final.
+**Compartido por los 6 (nadie es "el de comprobar"):** cada uno hace los **tests de lo suyo**, escribe **su sección del README** y del documento de arquitectura y, si se lo piden, **echa un vistazo a los PR de otros**. CI, protección de `main` y presentación/vídeo: Claude lo prepara y presenta cada uno su parte en la final.
 
 **Archivos compartidos** (`agrotechEFA2026.py`, `rxconfig.py`, `pyproject.toml`): solo se tocan con PR pequeño y avisando en el grupo; los gestiona A.
 
@@ -33,11 +33,11 @@ Claude lo redacta en `docs/contrato.md` y todos lo aprueban antes de programar:
 Con el contrato fijo, B y C trabajan con **datos de ejemplo** mientras A termina la BBDD.
 
 ## Reglas de git (puntúa en el baremo)
-- `main` protegida: nadie sube directo. Ramas `feat/<persona>-<tema>`, PR con descripción, **otra persona lo aprueba**. Paso a paso en `docs/GIT-SEGURO.md`.
-- `.github/CODEOWNERS`: si un PR toca tu carpeta, GitHub exige que lo apruebes tú o tu compañero de revisión.
+- `main` protegida: nadie sube directo, ni se puede forzar (`--force`) ni borrar. **Una rama corta por tarea** `feat/<letra>-<tema>`, PR con descripción y **la propia persona lo une** cuando GitHub dice que no hay conflictos. Paso a paso en `docs/GIT-SEGURO.md`.
+- Todos podéis cambiar cualquier archivo. Si es bastante cambio en algo de lo que se encarga otra persona, avisadla por el grupo.
 - Commits pequeños, mensaje descriptivo en español ("Añade gráfico de humedad del suelo").
-- Antes de empezar cada día: `git pull`. Cada uno trabaja solo en sus carpetas.
-- Claude: cada persona lo usa en su propio clon; el repo llevará un `CLAUDE.md` con estas reglas y el reparto, para que respete las carpetas de cada una.
+- Antes de empezar cada tarea: rama nueva desde `main` actualizada (lo hace vuestra IA).
+- Claude: cada persona lo usa en su propio clon; `AGENTS.md` lleva estas reglas, el reparto y cómo enseñaros git paso a paso.
 
 ## Calendario (hoy 23 oct)
 Tabla hecha para 4; con 6, la columna D se reparte: D lleva simulador y ESP32, E la recomendación de riego, Telegram y exportar, y F el despliegue, el CI y el vídeo.
@@ -58,7 +58,7 @@ Regla: **congelar funciones el 4 dic**; después solo arreglar errores.
 
 ## Qué hace Claude y qué hacéis vosotros
 - **Claude:** código de todas las carpetas, tests, CI, documentación, simulador, ideas, diapositivas, guion de la demo, revisión de PRs.
-- **Vosotros:** probar, aprobar los PR, tomar decisiones (qué diferenciales entran), instalar el sensor físico y presentar ante el jurado.
+- **Vosotros:** probar, unir vuestros PR, tomar decisiones (qué diferenciales entran), instalar el sensor físico y presentar ante el jurado.
 - Cada persona arranca con: "Soy la persona X, lee `docs/PLAN-EQUIPO.md` y `docs/equipo/<tu carpeta>/GUION.md`".
 
 ## Antes de empezar (necesito vuestro OK)
