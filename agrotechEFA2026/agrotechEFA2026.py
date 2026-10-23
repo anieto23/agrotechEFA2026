@@ -29,7 +29,7 @@ def sensor_card(
                     ),
                     padding="10px",
                     border_radius="12px",
-                    background="#F0FDF4",
+                    background="#CACACA",
                 ),
                 rx.spacer(),
                 rx.badge("Simulado", color_scheme="gray"),
@@ -37,14 +37,14 @@ def sensor_card(
                 align="center",
             ),
             rx.vstack(
-                rx.text(title, color="gray", size="2"),
+                rx.text(title, color="#CACACA", size="2"),
                 rx.hstack(
-                    rx.heading(value, size="7"),
-                    rx.text(unit, color="gray", size="2"),
+                    rx.heading(value, size="7", color=color),
+                    rx.text(unit, color="#CACACA", size="2"),
                     align="baseline",
                     spacing="1",
                 ),
-                rx.text(description, color="gray", size="1"),
+                rx.text(description, color="#CACACA", size="1"),
                 width="100%",
                 align="start",
                 spacing="2",
@@ -72,10 +72,10 @@ def index() -> rx.Component:
                         color="#16A34A",
                     ),
                     rx.vstack(
-                        rx.heading("Agrotech", size="6"),
+                        rx.heading("Agrotech", size="6",color="#CACACA"),
                         rx.text(
                             "Agricultura inteligente",
-                            color="gray",
+                            color="#CACACA",
                             size="2",
                         ),
                         spacing="0",
@@ -101,11 +101,12 @@ def index() -> rx.Component:
                 rx.heading(
                     "Panel de control",
                     size="8",
+                    color="#CACACA"
                 ),
                 rx.text(
                     "Consulta las condiciones ambientales "
                     "de tu parcela.",
-                    color="gray",
+                    color="#CACACA",
                     size="3",
                 ),
                 spacing="2",
@@ -168,6 +169,7 @@ def index() -> rx.Component:
                         rx.heading(
                             "Estado de la parcela",
                             size="4",
+                            color="#CACACA"
                         ),
                         spacing="2",
                         align="center",
@@ -176,7 +178,7 @@ def index() -> rx.Component:
                         "Todavía no hay sensores conectados. "
                         "Los valores mostrados son datos "
                         "ficticios para probar la interfaz.",
-                        color="gray",
+                        color="#CACACA",
                         size="2",
                     ),
                     rx.badge(
@@ -198,7 +200,7 @@ def index() -> rx.Component:
         ),
         min_height="100vh",
         width="100%",
-        background="#F8FAFC",
+        background="#272727",
     )
 
 
