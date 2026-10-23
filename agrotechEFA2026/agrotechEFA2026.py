@@ -66,10 +66,12 @@ def index() -> rx.Component:
             # Cabecera
             rx.hstack(
                 rx.hstack(
-                    rx.icon(
-                        tag="sprout",
-                        size=32,
-                        color="#16A34A",
+                    rx.image(
+                        src="/logo.png",
+                        alt="Logo de Agrotech",
+                        width="64px",
+                        height="64px",
+                        object_fit="contain",
                     ),
                     rx.vstack(
                         rx.heading("Agrotech", size="6",color="#CACACA"),
