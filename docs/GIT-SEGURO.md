@@ -39,9 +39,27 @@ Resumen: **tus carpetas** (no os cruzáis) + **ramas** (cada uno en su copia) + 
 
 ---
 
-## Cómo hacer los commits (cada día)
+## Trabajar con tu IA (lo normal)
 
-Puedes pedírselo a tu IA («empieza la tarea X en una rama nueva», «súbelo y abre el PR»), pero estos son los pasos que debe seguir, y tú debes entenderlos.
+Tu IA lee sola `AGENTS.md` al abrir el proyecto: Claude Code (vía `CLAUDE.md`), Copilot (vía `.github/copilot-instructions.md`), Codex y Cursor. Ahí tiene los pasos exactos de git. Tú solo hablas normal:
+
+| Tú dices | Tu IA hace |
+|---|---|
+| «Soy la persona B, empiezo con el gráfico de humedad» | Trae lo último de `main` y crea tu rama `feat/b-grafico-humedad` |
+| «Súbelo» / «haz el commit» / «ya he terminado» | Revisa qué has cambiado, deja fuera lo que no es tuyo o es secreto, pasa los tests, hace el commit, trae lo de los demás, sube y te da el enlace del PR con el título y la descripción para pegar |
+| «Ya me lo han aprobado» | Vuelve a `main`, lo actualiza y borra tu rama local |
+| «Revisa el PR de Juan» | Descarga su rama, la prueba y te dice si está bien |
+| Pega un error de git | Te explica qué pasa y lo arregla sin borrar nada |
+
+**Lo único que haces tú**: abrir el PR en GitHub con tu cuenta (el enlace te lo da tu IA), pedir revisión a tu compañero y aprobar los PR de otros después de probarlos.
+
+**Si tu IA te propone `--force`, borrar cambios o tocar la carpeta de otro, dile que no** y que siga `AGENTS.md`. Aunque lo intentara, GitHub lo bloquearía en `main`.
+
+Con otra IA que no lea `AGENTS.md` sola (por ejemplo ChatGPT en el navegador), empieza con: «Lee AGENTS.md y docs/GIT-SEGURO.md de este proyecto y síguelos».
+
+## Cómo hacer los commits a mano (lo que hace tu IA por dentro)
+
+Si no usas IA, o para entender lo que hace, estos son los pasos.
 
 ### 1. Al empezar: trae lo último y crea tu rama
 ```

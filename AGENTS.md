@@ -91,6 +91,51 @@ Las rutas de código cuelgan de `agrotechEFA2026/`. Quién aprueba cada carpeta 
 - Antes de pedir el PR: `git fetch` y `git merge origin/main` en tu rama, prueba que todo arranca y sube. Si el PR toca algo fuera de tus carpetas, dilo en la descripción.
 - `git add` solo de los archivos que has cambiado a propósito (nada de `git add .` sin mirar `git status`).
 
+## Procedimientos de git: la persona habla normal, tú haces los comandos
+La persona no tiene por qué saber git. Cuando diga algo de lo de abajo, sigue el procedimiento **entero y en orden**, ejecutando tú los comandos. Explicación para humanos: `docs/GIT-SEGURO.md`.
+
+### «Empiezo» / «voy a hacer X» / al abrir la sesión
+1. Si no sabes su letra (A–F), pregúntala. Comprueba `git config user.name` y `user.email`; si faltan, pídeselos y configúralos.
+2. `git status`. Si hay cambios sin guardar de otra tarea, avisa antes de cambiar de rama (ofrece hacer commit en su rama; no los descartes).
+3. `git switch main` → `git pull` → `git switch -c feat/<letra>-<tema-corto>` (sin tildes ni espacios, p. ej. `feat/b-grafico-humedad`). Si la rama ya existe: `git switch` a ella y `git merge main`.
+
+### «Haz el commit» / «súbelo» / «ya he terminado»
+1. **Rama:** `git branch --show-current`. Si es `main`, crea su rama ahora (`git switch -c feat/<letra>-<tema>`; los cambios se van con ella). Nunca hagas commit en `main`.
+2. **Revisa qué ha cambiado:** `git status` y `git diff`. Clasifica cada archivo:
+   - **Suyo** (sus carpetas, sus `tests/`, su `docs/equipo/<letra>-*/`) → se sube.
+   - **Ajeno o compartido** → NO lo añadas. Díselo: qué archivo, de quién es y qué cambio había. Que decida (dejarlo fuera, o PR aparte avisando al dueño).
+   - **Sospechoso** (`.env`, claves, tokens, contraseñas, bases de datos `.db`, datos generados, archivos de más de 5 MB, `__pycache__`, `.web/`) → NO lo añadas y avisa.
+3. **Secretos:** busca en lo que vas a subir `token`, `password`, `api_key`, `secret` y cosas como `123456789:ABC…`. Si hay alguno con valor real, para.
+4. **Prueba:** si hay tests, `python -m pytest` y enseña el resultado real. Si fallan, díselo y pregunta si sube igualmente (y lo pones en la descripción del PR).
+5. **Commit:** `git add <archivos suyos>` uno a uno o por carpeta, y `git commit -m "<Verbo> <qué>"` en español («Añade…», «Corrige…», «Quita…»). Si hay dos temas distintos, dos commits.
+6. **Trae lo de los demás:** `git fetch` y `git merge origin/main`. Si hay conflicto, sigue «Conflicto» abajo.
+7. **Sube:** `git push -u origin <rama>`. Si dice *rejected* / *fetch first*: `git pull` (merge, no rebase) y vuelve a subir. Nunca `--force`.
+8. **PR:** si hay `gh` y sesión iniciada, `gh pr create --base main --title "..." --body "..."`, y si sabes el usuario de su compañero de rotación (A→B→C→D→E→F→A), `--reviewer <usuario>`. Si no hay `gh`, dale a la persona el enlace que imprimió `git push` (`.../pull/new/<rama>`) y **el título y la descripción ya escritos para pegar**. La descripción lleva: qué cambia, cómo probarlo, resultado de los tests y si toca algo fuera de sus carpetas. El PR lo abre **la persona con su cuenta**.
+9. Termina con el resumen de «Al terminar una tarea» (abajo) y recuérdale a quién pedir la revisión.
+
+### «Ya me lo han aprobado» / «está unido»
+`git switch main` → `git pull` → `git branch -d <rama>` (con `-d`, nunca `-D`: si dice que no está unida, no la borres y avisa).
+
+### «Revisa el PR de X»
+`git fetch` → `git switch <su-rama>` → arranca la app y los tests → di si hace lo que promete, si solo toca sus carpetas y si hay secretos. Aprobar lo hace la persona en GitHub; tú le das tu opinión. Al acabar, vuelve a su rama de trabajo.
+
+### Conflicto
+1. `git status` para ver los archivos en conflicto. En cada uno, enséñale las dos versiones en cristiano (qué hacía cada una).
+2. Si el archivo es **suyo**: propón una versión que conserve lo correcto de las dos y pide su sí.
+3. Si es **ajeno o compartido**: no lo resuelvas. `git merge --abort` y dile a quién tiene que avisar.
+4. Tras resolver: `git add <archivo>`, `git commit`, tests y push.
+
+### Errores típicos
+| Mensaje | Qué hacer |
+|---|---|
+| `Authentication failed` / ventana de inicio de sesión | La persona inicia sesión en GitHub en esa ventana (no le pidas la contraseña ni el token) |
+| `Permission denied` / `403` | No tiene acceso: que anieto23 la invite (Settings → Collaborators) |
+| `protected branch` / `GH006` | Intentaba subir a `main`. Pasa los commits a una rama (`git switch -c feat/...`) y sube esa |
+| `Your local changes would be overwritten` | Haz commit en su rama primero (o `git stash` y luego `git stash pop`). Nunca descartes cambios sin su sí |
+| `You are in 'detached HEAD'` | `git switch -c feat/<letra>-<tema>` para no perder nada |
+| `merge in progress` / `MERGING` | Termina el conflicto (arriba) o `git merge --abort` |
+| Cualquier otra cosa | Enséñale el error real y explica qué significa antes de probar nada destructivo |
+
 ## Cómo te comportas con la persona
 - Habla **español**, claro y corto. Son estudiantes de FP: explica qué hiciste en 2-3 líneas, sin jerga innecesaria.
 - Haz tú el trabajo (código, tests, docs). La persona solo prueba, revisa y confirma. **No le pases tareas que puedes hacer tú**; propón algo ya hecho y pídele un "sí/no".
