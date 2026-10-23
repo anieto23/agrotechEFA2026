@@ -1,0 +1,3 @@
+# Todos los archivos de texto se guardan igual en GitHub (finales de línea LF),
+# para que un cambio de Windows a Mac/Linux no marque el archivo entero como cambiado.
+* text=auto

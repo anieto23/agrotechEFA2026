@@ -6,25 +6,30 @@
 3. Ser invitado al repo de GitHub (lo hace anieto23: Settings → Collaborators) y clonarlo:
    `git clone https://github.com/anieto23/agrotechEFA2026.git`
 4. Dentro de la carpeta: `pip install reflex` y `python -m reflex run` → abrir http://localhost:3000. Si ves el panel con 4 tarjetas, todo va.
-5. Abrir Claude Code en esa carpeta y pegar al empezar cada día:
-   > Soy la persona **X** del proyecto Agrotech. Lee `AGENTS.md`, `docs/PLAN-EQUIPO.md` y mi plan `docs/equipo/<tu carpeta>/GUION.md`. Haz `git pull` y dime en qué tarea estamos y qué toca hoy.
+5. Abrir tu IA (Claude Code, Copilot…) en esa carpeta y pegar al empezar cada día:
+   > Soy la persona **X** del proyecto Agrotech y no sé mucho de git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md`, `docs/PLAN-EQUIPO.md` y mi plan `docs/equipo/<tu carpeta>/GUION.md`. Trae lo último de main y dime en qué tarea estamos y qué toca hoy.
+6. Lo de git (ramas, commits, PR) te lo explica y te lo hace tu IA: ver `docs/GIT-SEGURO.md`.
 
-## Rutina de cada día (10 min)
-1. `git pull`. Mirar los PR abiertos.
-2. Pedir a Claude la tarea del día de tu guion.
-3. Probar lo que ha hecho (la web, el comando, el móvil). Si funciona → "súbelo como PR".
-4. Revisar **un PR de otra persona** (rotamos: A→B→C→D→E→F→A). Aprobar solo si lo has probado.
+## Rutina de cada día (lo hace tu IA; tú le hablas normal)
+1. «Soy la persona X, empiezo con <tarea>» → tu IA trae lo último de `main` y te crea una rama nueva para esa tarea.
+2. Trabajas con tu IA y pruebas lo que hace (la web, el comando, el móvil).
+3. «Súbelo» → tu IA guarda y sube los cambios y te da el enlace del PR. Lo abres y, si GitHub dice que no hay conflictos, pulsas **Merge** tú misma.
+4. «Ya lo he unido» → tu IA vuelve a `main` y borra la rama. La siguiente tarea, rama nueva.
 
-## Cómo revisar un PR (3 preguntas)
+Todo el detalle (y qué hacer si algo falla) en `docs/GIT-SEGURO.md`.
+
+## Si quieres que alguien mire tu PR (opcional)
+No hace falta aprobación para unir, pero si el cambio es grande o toca lo de otra persona, pide un vistazo por el grupo. Quien lo mire se pregunta:
 - ¿Lo he arrancado y hace lo que dice la descripción?
-- ¿Solo toca las carpetas de su dueño?
+- ¿Rompe algo de lo que ya funcionaba?
 - ¿Pasan los tests y no hay claves ni contraseñas en el código?
 
 ## Reglas de oro
-- Nunca en `main`: rama `feat/<letra>-<tema>`.
+- Todos podéis tocar todo, pero **nunca en `main`**: una rama `feat/<letra>-<tema>` por tarea, que dure poco.
 - Un PR = una cosa pequeña (mejor 10 PR de 1 hora que 1 de 10 horas).
+- Si vas a cambiar bastante algo de lo que se encarga otra persona, avísale por el grupo.
 - Si el contrato (`docs/contrato.md`) te estorba, avisa al grupo; no lo cambies solo.
-- Si algo se rompe, avisa en el grupo y no lo arregles en carpeta ajena.
+- Si algo se rompe en `main`, avisa en el grupo: se deshace con el botón **Revert** del PR que lo rompió.
 - **Congelación de funciones: 4 dic.** Después solo errores.
 
 ## Fechas
