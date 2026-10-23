@@ -19,7 +19,7 @@ Estructura del código (`agrotechEFA2026/`):
 | **C** | Gestión, alertas y UX | `pages/parcelas.py`, `pages/sensores.py`, `pages/alertas.py`, `pages/login.py`, `components/layout.py` (menú/tema/responsive), `state/gestion_state.py`, `services/alertas.py` (umbrales y aviso visual) |
 | **D** | Sensores (diferencial 1) | `scripts/` (simulador + ESP32), `firmware/`, `docs/hardware.md` |
 | **E** | Inteligencia y avisos (diferenciales 2 y 3) | `services/riego.py` (recomendación de riego), `services/telegram.py` (avisos), `services/export.py` (CSV/PDF) |
-| **F** | Calidad, despliegue y entrega | `.github/` (CI, `CODEOWNERS`), `Dockerfile`/despliegue público, `README.md` (une las secciones), `docs/arquitectura.md`, `docs/presentacion/` (diapositivas y vídeo) |
+| **F** | Calidad, despliegue y entrega | `.github/` (CI), `Dockerfile`/despliegue público, `README.md` (une las secciones), `docs/arquitectura.md`, `docs/presentacion/` (diapositivas y vídeo) |
 
 **Compartido por los 6 (nadie es "el de comprobar"):** cada uno hace los **tests de lo suyo**, escribe **su sección del README** y del documento de arquitectura y, si se lo piden, **echa un vistazo a los PR de otros**. CI, protección de `main` y presentación/vídeo: Claude lo prepara y presenta cada uno su parte en la final.
 
