@@ -1,11 +1,9 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-from sqlalchemy.pool import StaticPool
-from sqlmodel import Session, SQLModel, create_engine, select
+from sqlmodel import Session, select
 
 from agrotechEFA2026.db import consultas as c
-from agrotechEFA2026.db import seed, session
 from agrotechEFA2026.db.models import Alert, Crop, CropRange, Parcel, SensorData, User
 from agrotechEFA2026.db.seguridad import hash_password
 
@@ -13,18 +11,6 @@ AHORA = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
 AGRICULTOR, TECNICO = 1, 2  # ids que crea el seed
 INVERNADERO, AGUACATES = 1, 2  # parcelas del seed
 SUELO_INVERNADERO = 3  # sensor soil_moisture de la parcela 1 (umbral bajo 40 %)
-
-
-@pytest.fixture
-def motor(monkeypatch):
-    # Base de datos en memoria compartida por todas las sesiones del test
-    motor = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
-    SQLModel.metadata.create_all(motor)
-    with Session(motor) as s:
-        seed.sembrar(s, {"farmer": "a", "technician": "b"})
-    monkeypatch.setattr(session, "_motor", motor)
-    yield motor
-    SQLModel.metadata.drop_all(motor)
 
 
 def _guardar(motor, *objetos):

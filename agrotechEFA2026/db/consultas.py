@@ -131,7 +131,7 @@ def _ids_parcelas_visibles(s: Session, usuario_id: int) -> list[int]:
     return list(set(propias) | set(compartidas))
 
 
-def _limites(s: Session, sensor: Sensor, nodo: Node) -> tuple[Optional[float], Optional[float]]:
+def limites_sensor(s: Session, sensor: Sensor, nodo: Node) -> tuple[Optional[float], Optional[float]]:
     """Umbrales del sensor; los que falten se toman del óptimo del cultivo del nodo."""
     rango = None
     if nodo.crop_id is not None:
@@ -281,7 +281,7 @@ def ultimas_lecturas(usuario_id: int, parcela_id: int) -> list[EstadoSensor]:
                 .order_by(col(SensorData.timestamp).desc())
                 .limit(1)
             ).first()
-            minimo, maximo = _limites(s, sensor, nodo)
+            minimo, maximo = limites_sensor(s, sensor, nodo)
             valor = ultima.value if ultima else None
             estados.append(
                 EstadoSensor(

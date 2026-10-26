@@ -5,9 +5,11 @@
 2. Decirle a git quién eres: `git config --global user.name "Tu nombre"` y `git config --global user.email "tu@correo"`.
 3. Ser invitado al repo de GitHub (lo hace anieto23: Settings → Collaborators) y clonarlo:
    `git clone https://github.com/anieto23/agrotechEFA2026.git`
-4. Dentro de la carpeta: `pip install reflex` y `python -m reflex run` → abrir http://localhost:3000. Si ves el panel con 4 tarjetas, todo va.
+4. Dentro de la carpeta crea tu entorno e instala lo necesario (o pídeselo a tu IA: «comprueba que todo está bien»):
+   `python -m venv .venv` → `.venv\Scripts\Activate.ps1` → `pip install -r requirements.txt` → `python -m pytest` (todo en verde).
+   Luego `python -m reflex run` → abrir http://localhost:3000. Si ves el panel con 4 tarjetas, todo va.
 5. Abrir tu IA (Claude Code, Copilot…) en esa carpeta y pegar al empezar cada día:
-   > Soy la persona **X** del proyecto Agrotech y no sé mucho de git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md`, `docs/PLAN-EQUIPO.md`, `docs/IDEA-PROYECTO.md` y mi plan `docs/equipo/<tu carpeta>/GUION.md`. Trae lo último de main y dime en qué tarea estamos y qué toca hoy.
+   > Soy la persona **X** del proyecto Agrotech y no sé mucho de git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md`, `docs/PLAN-EQUIPO.md`, `docs/IDEA-PROYECTO.md` y mi plan `docs/equipo/<tu carpeta>/GUION.md`. Trae lo último de main, comprueba que todo está bien (dependencias y tests) y dime en qué tarea estamos y qué toca hoy.
 6. Lo de git (ramas, commits, PR) te lo explica y te lo hace tu IA: ver `docs/GIT-SEGURO.md`.
 
 ## Rutina de cada día (lo hace tu IA; tú le hablas normal)

@@ -4,7 +4,8 @@ Registro de cómo ha ido creciendo el proyecto, como piden las bases del reto. L
 **Cada PR añade aquí una línea** (fecha, quién, qué y número de PR). El detalle está en el historial de GitHub.
 
 ## 26-oct-2026
-- **efapro (A, datos):** se crea este registro y la regla de que cada PR añada su línea (`AGENTS.md`).
+- **efapro (A, datos):** API REST con FastAPI dentro de Reflex; primera ruta: entrada de lecturas de los sensores con clave del aparato, validación y alertas. Probada con el simulador: 1164 de 1164 lecturas guardadas. 65 tests. Las IAs del equipo comprueban ahora el entorno (Python, dependencias y tests) cada vez que traen lo de los demás.
+- **efapro (A, datos):** se crea este registro y la regla de que cada PR añada su línea (`AGENTS.md`). (PR #9)
 - **efapro (A, datos):** funciones de acceso a datos para la interfaz, con permisos por usuario y validación (posición dentro de la parcela, umbrales, acciones según interior o exterior). 50 tests. (PR #8)
 - **efapro (A, datos):** base de datos con SQLModel: tablas del contrato, conexión, contraseñas y claves con hash y datos de ejemplo con los mismos ids que el simulador. Se corrige la versión de Python pedida (3.15 → 3.11+) y se completan las dependencias. (PR #7)
 - **efapro (A, datos):** borrador del contrato de datos y API (`docs/contrato.md`): tablas, endpoints, funciones para la interfaz. (PR #6)
