@@ -223,3 +223,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Claves de los aparatos de ejemplo (db/seed.py)
+claves_demo.json

@@ -9,3 +9,12 @@
 
 El panel sigue siendo una maqueta: las lecturas son fijas y no hay conexión con la API,
 estado dinámico ni gráficos de histórico implementados todavía.
+
+## Base de datos
+
+- `agrotechEFA2026/db/models.py`: tablas del contrato con **SQLModel** (lo que recomienda Reflex 0.10 para apps nuevas), tipos de medida y acciones permitidas según la parcela sea de interior o exterior.
+- `agrotechEFA2026/db/session.py`: conexión. SQLite por defecto; para cambiar de motor basta `AGROTECH_DB_URL`.
+- `agrotechEFA2026/db/seguridad.py`: contraseñas con PBKDF2-SHA256 y claves de aparatos con SHA-256 (solo librería estándar).
+- `agrotechEFA2026/db/seed.py`: datos de ejemplo con los mismos ids que el simulador.
+
+Decisiones: un **nodo** es el aparato del plano y agrupa sensores de una magnitud cada uno; las fechas se guardan en UTC con zona horaria; los rangos óptimos de cultivo van en tabla aparte y con fuente obligatoria (no se inventan). Las tablas no validan rangos: lo harán las funciones de acceso y la API.
