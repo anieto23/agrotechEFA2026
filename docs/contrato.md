@@ -7,7 +7,7 @@
 - **Motor:** SQLite en desarrollo (`sqlite:///agrotech.db`, git ya lo ignora). Para publicar se puede pasar a MySQL/MariaDB cambiando `db_url`, sin tocar el código.
 - **Librería:** **SQLModel directamente** (`SQLModel`, `create_engine`, `Session`), como recomienda la documentación de Reflex 0.10 para apps nuevas (`rx.Model` queda como forma antigua). Se instala con `reflex[db]`, que trae SQLModel y Alembic para las migraciones.
 - **Nombres:** tablas, columnas y JSON **en inglés**, como las bases y el simulador. El código Python (funciones, variables, comentarios) **en español**, como el resto del repo.
-- **Fechas:** ISO 8601. Se guardan **en UTC**. Si una lectura llega sin zona horaria (`2026-10-26T12:00:00`), se entiende como hora de Madrid.
+- **Fechas:** ISO 8601. Se guardan **en UTC**. Si una fecha llega sin zona horaria (`2026-10-26T12:00:00`), se entiende como **UTC** (el simulador ya manda la zona; un ESP32 con NTP da UTC). Una lectura sin `timestamp` toma la hora del servidor, y una con más de 5 minutos en el futuro se rechaza (`422`).
 - **Ids:** enteros autoincrementales (el simulador ya usa enteros).
 - **Nodo y sensor:** un **nodo** es el aparato que se coloca en el plano (un ESP32 con varias sondas). Cada **sensor** mide una sola magnitud y pertenece a un nodo. Al pulsar un nodo en el plano se ven todas sus magnitudes comparadas con el óptimo del cultivo.
 
@@ -82,9 +82,9 @@ Auth: `Authorization: Bearer <token>` salvo donde se indica.
 ```
 Respuesta `201`:
 ```json
-{"id": 1024, "sensor_id": 3, "timestamp": "2026-10-26T12:34:56Z", "value": 31.5, "alert": {"type": "LOW", "message": "Humedad del suelo 31.5 % por debajo del óptimo (40-70 %)"}}
+{"id": 1024, "sensor_id": 3, "timestamp": "2026-10-26T12:34:56Z", "value": 31.5, "alert": {"type": "LOW", "message": "Humedad del suelo 31.5 %, por debajo de lo recomendado (40-70 %)"}}
 ```
-`alert` es `null` si el valor está dentro del rango.
+`alert` es `null` si el valor está dentro del rango. Mientras haya una alerta igual sin leer no se crea otra: se devuelve la que ya existe. En el cuerpo solo `value` es obligatorio; `type`, `unit` y `sensor_id`, si llegan, deben coincidir con el sensor.
 
 Lectura del histórico, `GET /api/sensors/3/data?limit=1`:
 ```json
