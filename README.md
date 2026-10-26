@@ -3,7 +3,8 @@ Proyecto de EFA El Soto para el Reto Agrotech 2026
 
 App para dibujar la parcela a escala, colocar sus sensores, comparar cada lectura con
 los valores óptimos del cultivo y actuar desde el móvil. Idea completa y fases en
-[`docs/IDEA-PROYECTO.md`](docs/IDEA-PROYECTO.md).
+[`docs/IDEA-PROYECTO.md`](docs/IDEA-PROYECTO.md). Cómo ha evolucionado el trabajo:
+[`docs/EVOLUCION.md`](docs/EVOLUCION.md).
 
 ## Instalación
 

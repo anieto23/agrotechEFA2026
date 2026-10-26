@@ -59,7 +59,7 @@ When you need to compile, run, reload, or debug a Reflex application, follow the
 
 ## Qué es esto
 Proyecto del **II Reto Agrotech Startup 2026** (EFA El Soto, Motril). Web app **Python + Reflex** que monitoriza en tiempo real los sensores de una parcela. Equipo de 6 personas (A, B, C, D, E, F) que usan IA para casi todo. Entrega **8-dic-2026**, final **16-dic-2026**. Objetivo: **ganar**.
-Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.md`.
+Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.md`. Qué se ha hecho hasta hoy: `docs/EVOLUCION.md`.
 **Idea del producto y cosas a tener en cuenta: `docs/IDEA-PROYECTO.md`.** Léela antes de proponer o programar funcionalidades y respeta sus «Cosas a tener en cuenta» (control distinto en interior/exterior, no inventar valores óptimos de cultivos, fases).
 
 ## Cómo trabaja el equipo (resumen que debes enseñar)
@@ -124,12 +124,13 @@ Cuando diga algo de lo de abajo, sigue el procedimiento **entero y en orden**, e
    - Lo **sospechoso**: `.env`, claves, tokens, contraseñas, bases de datos `.db`, datos generados, archivos de más de 5 MB, `__pycache__`, `.web/`.
 3. **Secretos:** busca en lo que vas a subir `token`, `password`, `api_key`, `secret` y cosas como `123456789:ABC…`. Si hay alguno con valor real, para.
 4. **Prueba:** si hay tests, `python -m pytest` y enseña el resultado real. Si fallan, díselo y no sigas sin su sí (y ponlo en la descripción del PR).
-5. **Commit:** `git add <archivos>` y `git commit -m "<Verbo> <qué>"` en español («Añade…», «Corrige…», «Quita…»). Si hay dos temas distintos, dos commits.
-6. **Trae lo de los demás:** `git fetch` y `git merge origin/main`. Si hay conflicto, sigue «Conflicto». Si ha entrado algo nuevo, vuelve a pasar los tests.
-7. **Sube:** `git push -u origin <rama>`. Si dice *rejected* / *fetch first*: `git pull` (merge, no rebase) y vuelve a subir. Nunca `--force`.
-8. **PR:** si hay `gh` y sesión iniciada, `gh pr create --base main --title "..." --body "..."`. Si no, dale el enlace que imprimió `git push` (`.../pull/new/<rama>`) y **el título y la descripción ya escritos para pegar** (qué cambia, cómo probarlo, resultado de los tests, y si toca algo de lo que se encarga otra persona).
-9. **Unir:** explícale que en el PR debe ver «This branch has no conflicts with the base branch» y entonces pulsar **Merge pull request** → **Confirm merge**. Si GitHub dice que hay conflictos, no lo une: vuelve al paso 6. Si el cambio es grande o toca lo de otra persona, sugiérele que alguien le eche un vistazo antes (opcional).
-10. Termina con el resumen de «Al terminar una tarea».
+5. **Registro:** añade una línea arriba del todo en `docs/EVOLUCION.md` (bajo la fecha de hoy): quién (usuario de GitHub y letra), qué ha cambiado en una frase y «(PR #n)» si ya se sabe. Las bases del reto piden este registro.
+6. **Commit:** `git add <archivos>` y `git commit -m "<Verbo> <qué>"` en español («Añade…», «Corrige…», «Quita…»). Si hay dos temas distintos, dos commits.
+7. **Trae lo de los demás:** `git fetch` y `git merge origin/main`. Si hay conflicto, sigue «Conflicto». Si ha entrado algo nuevo, vuelve a pasar los tests.
+8. **Sube:** `git push -u origin <rama>`. Si dice *rejected* / *fetch first*: `git pull` (merge, no rebase) y vuelve a subir. Nunca `--force`.
+9. **PR:** si hay `gh` y sesión iniciada, `gh pr create --base main --title "..." --body "..."`. Si no, dale el enlace que imprimió `git push` (`.../pull/new/<rama>`) y **el título y la descripción ya escritos para pegar** (qué cambia, cómo probarlo, resultado de los tests, y si toca algo de lo que se encarga otra persona).
+10. **Unir:** explícale que en el PR debe ver «This branch has no conflicts with the base branch» y entonces pulsar **Merge pull request** → **Confirm merge**. Si GitHub dice que hay conflictos, no lo une: vuelve al paso 7. Si el cambio es grande o toca lo de otra persona, sugiérele que alguien le eche un vistazo antes (opcional).
+11. Termina con el resumen de «Al terminar una tarea».
 
 ### «Ya lo he unido» / «está en main»
 `git switch main` → `git pull` → `git branch -d <rama>` (con `-d`, nunca `-D`: si dice que no está unida, no la borres y avisa). Explica que la siguiente tarea empieza con una rama nueva.
@@ -183,8 +184,8 @@ No lo «arregles» a ciegas. Busca qué PR lo causó (`git log origin/main`). Lo
 - No abras ni modifiques archivos fuera de este repo.
 
 ## Dependencias y entorno
-- Python 3.12 funciona (el `pyproject.toml` pide ≥3.15, ignóralo hasta que se cambie). Reflex 0.10.
-- Instalar: `pip install -r requirements.txt` (si no existe, genéralo desde `pyproject.toml` en un PR propio). Arrancar: `python -m reflex run` (web :3000, API :8000).
+- Python 3.11 o superior (el equipo usa 3.12). Reflex 0.10.
+- Instalar (dentro del entorno virtual `.venv`): `pip install -r requirements.txt`; si cambias dependencias, actualiza a la vez `pyproject.toml` y `requirements.txt`. Arrancar: `python -m reflex run` (web :3000, API :8000).
 - No instales dependencias nuevas sin añadirlas a `pyproject.toml` y avisar en el PR.
 - Si el ordenador va justo de memoria, no dejes `reflex run` abierto sin necesidad.
 
