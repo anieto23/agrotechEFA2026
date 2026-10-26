@@ -60,6 +60,7 @@ When you need to compile, run, reload, or debug a Reflex application, follow the
 ## Qué es esto
 Proyecto del **II Reto Agrotech Startup 2026** (EFA El Soto, Motril). Web app **Python + Reflex** que monitoriza en tiempo real los sensores de una parcela. Equipo de 6 personas (A, B, C, D, E, F) que usan IA para casi todo. Entrega **8-dic-2026**, final **16-dic-2026**. Objetivo: **ganar**.
 Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.md`.
+**Idea del producto y cosas a tener en cuenta: `docs/IDEA-PROYECTO.md`.** Léela antes de proponer o programar funcionalidades y respeta sus «Cosas a tener en cuenta» (control distinto en interior/exterior, no inventar valores óptimos de cultivos, fases).
 
 ## Cómo trabaja el equipo (resumen que debes enseñar)
 1. **Todos pueden ver y cambiar todo.** No hay carpetas prohibidas.

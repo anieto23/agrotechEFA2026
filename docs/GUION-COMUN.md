@@ -7,7 +7,7 @@
    `git clone https://github.com/anieto23/agrotechEFA2026.git`
 4. Dentro de la carpeta: `pip install reflex` y `python -m reflex run` → abrir http://localhost:3000. Si ves el panel con 4 tarjetas, todo va.
 5. Abrir tu IA (Claude Code, Copilot…) en esa carpeta y pegar al empezar cada día:
-   > Soy la persona **X** del proyecto Agrotech y no sé mucho de git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md`, `docs/PLAN-EQUIPO.md` y mi plan `docs/equipo/<tu carpeta>/GUION.md`. Trae lo último de main y dime en qué tarea estamos y qué toca hoy.
+   > Soy la persona **X** del proyecto Agrotech y no sé mucho de git. Lee `AGENTS.md`, `docs/GIT-SEGURO.md`, `docs/PLAN-EQUIPO.md`, `docs/IDEA-PROYECTO.md` y mi plan `docs/equipo/<tu carpeta>/GUION.md`. Trae lo último de main y dime en qué tarea estamos y qué toca hoy.
 6. Lo de git (ramas, commits, PR) te lo explica y te lo hace tu IA: ver `docs/GIT-SEGURO.md`.
 
 ## Rutina de cada día (lo hace tu IA; tú le hablas normal)
