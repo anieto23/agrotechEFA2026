@@ -39,6 +39,10 @@ def crear_tablas(motor: Engine | None = None) -> None:
 
 @contextmanager
 def sesion(motor: Engine | None = None) -> Iterator[Session]:
-    """Abre una sesión corta: `with sesion() as s: ...`."""
-    with Session(motor or obtener_motor()) as s:
+    """Abre una sesión corta: `with sesion() as s: ...`.
+
+    expire_on_commit=False deja usar los objetos devueltos después de cerrar la sesión
+    (la interfaz los recibe ya cerrada).
+    """
+    with Session(motor or obtener_motor(), expire_on_commit=False) as s:
         yield s

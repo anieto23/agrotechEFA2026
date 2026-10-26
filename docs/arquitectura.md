@@ -16,5 +16,6 @@ estado dinámico ni gráficos de histórico implementados todavía.
 - `agrotechEFA2026/db/session.py`: conexión. SQLite por defecto; para cambiar de motor basta `AGROTECH_DB_URL`.
 - `agrotechEFA2026/db/seguridad.py`: contraseñas con PBKDF2-SHA256 y claves de aparatos con SHA-256 (solo librería estándar).
 - `agrotechEFA2026/db/seed.py`: datos de ejemplo con los mismos ids que el simulador.
+- `agrotechEFA2026/db/consultas.py`: funciones que usa la interfaz para leer y guardar. Cada una comprueba el permiso (dueño o técnico invitado) y valida los datos (medidas, posición dentro de la parcela, umbrales, acciones según interior o exterior).
 
 Decisiones: un **nodo** es el aparato del plano y agrupa sensores de una magnitud cada uno; las fechas se guardan en UTC con zona horaria; los rangos óptimos de cultivo van en tabla aparte y con fuente obligatoria (no se inventan). Las tablas no validan rangos: lo harán las funciones de acceso y la API.
