@@ -1,0 +1,4 @@
+# Mismas dependencias que pyproject.toml, para instalar con: pip install -r requirements.txt
+reflex[db]>=0.10.0
+requests>=2.31
+pytest>=8
