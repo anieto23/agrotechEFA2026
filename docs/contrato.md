@@ -95,7 +95,7 @@ Estado frente al óptimo (dentro de `GET /parcels/{id}` y `GET /dashboard`):
 ```json
 {"sensor_id": 3, "type": "soil_moisture", "value": 31.5, "unit": "%", "optimal_min": 40, "optimal_max": 70, "status": "low"}
 ```
-`status` puede ser `low`, `ok`, `high` o `no_data`. La interfaz lo muestra con texto e icono, no solo con color.
+`status` puede ser `low`, `ok`, `high`, `no_data` (sin lecturas) o `no_range` (sin umbral ni óptimo con el que comparar, p. ej. mientras falten las fuentes de los cultivos). La interfaz lo muestra con texto e icono, no solo con color.
 
 ## Funciones de `db/` para B, C y E
 La interfaz de Reflex llama a estas funciones directamente (no pasa por la API). Todas reciben el `usuario_id` y solo devuelven lo que ese usuario puede ver.
@@ -105,17 +105,28 @@ La interfaz de Reflex llama a estas funciones directamente (no pasa por la API).
 listar_parcelas(usuario_id: int) -> list[Parcel]
 obtener_parcela(usuario_id: int, parcela_id: int) -> Parcel | None
 crear_parcela(usuario_id: int, nombre: str, tipo: str, ancho_m: float, largo_m: float) -> Parcel
-colocar_nodo(usuario_id: int, parcela_id: int, nombre: str, x_m: float, y_m: float, radio_m: float, cultivo_id: int | None) -> Node
+colocar_nodo(usuario_id: int, parcela_id: int, nombre: str, x_m: float, y_m: float, radio_m: float, cultivo_id: int | None) -> tuple[Node, str]   # str = clave del aparato, se muestra una sola vez
 mover_nodo(usuario_id: int, nodo_id: int, x_m: float, y_m: float) -> Node
 crear_sensor(usuario_id: int, nodo_id: int, tipo: str, umbral_bajo: float | None, umbral_alto: float | None) -> Sensor
 ultimas_lecturas(usuario_id: int, parcela_id: int) -> list[EstadoSensor]   # valor + óptimo + status
 historico(usuario_id: int, sensor_id: int, desde: datetime, hasta: datetime, limite: int = 500) -> list[SensorData]
-listar_cultivos() -> list[CropConRangos]
+listar_cultivos() -> list[CultivoConRangos]
 alertas_pendientes(usuario_id: int) -> list[Alert]
 marcar_alerta_leida(usuario_id: int, alerta_id: int) -> None
 crear_accion(usuario_id: int, parcela_id: int, tipo: str, duracion_min: int | None) -> Action
 ```
 Si los datos no son válidos o el usuario no tiene permiso, lanzan `ValueError` o `PermissionError` con un mensaje en español, listo para mostrarlo en pantalla.
+
+Uso desde un `State` de Reflex (ejemplo):
+```python
+from agrotechEFA2026.db import consultas
+
+try:
+    self.parcelas = consultas.listar_parcelas(self.usuario_id)
+except (ValueError, PermissionError) as error:
+    self.error = str(error)
+```
+`EstadoSensor` y `CultivoConRangos` usan los mismos nombres de campo que el JSON de la API. En `historico`, una fecha sin zona horaria se entiende como UTC. Solo el agricultor dueño puede crear, mover, marcar alertas o dar órdenes; el técnico solo lee.
 
 ## Datos de ejemplo (`db/seed.py`)
 - 2 usuarios: un agricultor y un técnico (contraseñas de prueba en `.env.example`, guardadas con hash).
