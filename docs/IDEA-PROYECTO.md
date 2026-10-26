@@ -38,12 +38,8 @@ Si vamos justos de tiempo, se recorta la fase 3, nunca la 1.
 - **E – Inteligencia:** comparación con los óptimos y recomendaciones («regar 20 min»), avisos por Telegram.
 - **F – Calidad y entrega:** tests, despliegue, README/arquitectura y presentación que cuente esta idea.
 
-## Datos (propuesta, pendiente de aprobar en el contrato)
-Sobre las tablas sugeridas por las bases (`users, parcels, sensors, sensor_data, alerts`) se añaden:
-- `parcels`: + `tipo` (`interior`/`exterior`), `ancho_m`, `largo_m`.
-- `sensors`: + `pos_x_m`, `pos_y_m`, `radio_m` (zona que cubre), `cultivo_id`.
-- `cultivos`: `id`, `nombre`, y por parámetro un mínimo y un máximo óptimos (temperatura, humedad del suelo, humedad del aire, luz), `fuente` (de dónde salen los datos).
-- `acciones`: `id`, `parcel_id`, `tipo` (riego, ventilación…), `timestamp`, `user_id`.
+## Datos
+Las tablas, la API y las funciones de `db/` están en **`docs/contrato.md`**. Sobre las tablas de las bases se añaden: tipo y medidas de la parcela, **nodos** (el aparato colocado en el plano, con su posición, su zona y su cultivo), cultivos con sus rangos óptimos y acciones.
 
 ## Cosas a tener en cuenta (importante)
 1. **Interior y exterior no se controlan igual.** En exterior no se puede bajar la temperatura: solo regar (y como mucho sombrear). En interior hay además ventilación, calefacción, nebulización y sombreo. **La app solo muestra los botones que tienen sentido** en cada tipo de parcela.
