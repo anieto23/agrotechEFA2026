@@ -3,6 +3,9 @@
 Registro de cómo ha ido creciendo el proyecto, como piden las bases del reto. Lo más reciente, arriba.
 **Cada PR añade aquí una línea** (fecha, quién, qué y número de PR). El detalle está en el historial de GitHub.
 
+## 27-oct-2026
+- **mhjosemi (D, sensores):** recomendación de riego (`services/riego.py`, reglas por cultivo y previsión de Open-Meteo con caché), avisos por Telegram con máximo 1 cada 30 min (`services/telegram.py`), exportar CSV e informe PDF (`services/export.py`), firmware MicroPython del ESP32 y ESP32 virtual como plan B, `docs/hardware.md` y `Dockerfile`. Cifras de cultivos pendientes de validar con el profesorado agrario.
+
 ## 26-oct-2026
 - **efapro (A, datos):** API REST con FastAPI dentro de Reflex; primera ruta: entrada de lecturas de los sensores con clave del aparato, validación y alertas. Probada con el simulador: 1164 de 1164 lecturas guardadas. 65 tests. Las IAs del equipo comprueban ahora el entorno (Python, dependencias y tests) cada vez que traen lo de los demás.
 - **efapro (A, datos):** se crea este registro y la regla de que cada PR añada su línea (`AGENTS.md`). (PR #9)
