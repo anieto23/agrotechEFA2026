@@ -172,37 +172,18 @@ def formulario_parcela() -> rx.Component:
 
 
 def tarjeta_media(media: dict[str, rx.Var]) -> rx.Component:
-    return rx.card(
-        rx.vstack(
-            rx.hstack(
-                rx.icon(tag=media["icon"], size=20, color=media["color"]),
-                rx.text(media["name"], color=colors.TEXT, size="2"),
-                align="center",
-                spacing="2",
-            ),
-            rx.hstack(
-                rx.heading(
-                    rx.cond(media["value"] != "", media["value"], "—"),
-                    size="6",
-                    color=media["color"],
-                ),
-                rx.text(media["unit"], color=colors.TEXT, size="2"),
-                align="baseline",
-                spacing="1",
-            ),
-            rx.text(
-                rx.cond(
-                    media["sector_count"] != "0",
-                    "Media de " + media["sector_count"] + " sectores con lectura",
-                    "Sin lecturas disponibles",
-                ),
-                color=colors.TEXT,
-                size="1",
-            ),
-            spacing="2",
-            align="start",
+    return sensor_card(
+        media["name"],
+        rx.cond(media["value"] != "", media["value"], "—"),
+        media["unit"],
+        rx.cond(
+            media["sector_count"] != "0",
+            "Media de " + media["sector_count"] + " sectores con lectura",
+            "Sin lecturas disponibles",
         ),
-        width="100%",
+        media["icon"],
+        media["color"],
+        badge="Media",
     )
 
 
@@ -220,21 +201,28 @@ def detalle_parcela() -> rx.Component:
             width="100%",
             wrap="wrap",
         ),
-        rx.vstack(
-            rx.heading(
-                DashboardState.parcela_seleccionada["name"],
-                size="8",
-                color=colors.TEXT,
+        rx.card(
+            rx.hstack(
+                rx.icon(tag="map", size=28, color=colors.PARCEL_STATUS),
+                rx.vstack(
+                    rx.heading(
+                        DashboardState.parcela_seleccionada["name"],
+                        size="7",
+                        color=colors.TEXT,
+                    ),
+                    rx.text(
+                        DashboardState.parcela_seleccionada["area_m2"],
+                        " m² · ",
+                        DashboardState.parcela_seleccionada["shape_label"],
+                        color=colors.TEXT,
+                        size="2",
+                    ),
+                    spacing="1",
+                    align="start",
+                ),
+                spacing="3",
+                align="center",
             ),
-            rx.text(
-                DashboardState.parcela_seleccionada["area_m2"],
-                " m² · ",
-                DashboardState.parcela_seleccionada["shape_label"],
-                color=colors.TEXT,
-                size="3",
-            ),
-            spacing="1",
-            align="start",
             width="100%",
         ),
         rx.vstack(
@@ -484,10 +472,10 @@ def dashboard() -> rx.Component:
             spacing="6",
             width="100%",
             max_width="1200px",
-            padding={"initial": "16px", "md": "24px"},
             align="start",
         ),
         min_height="100vh",
         width="100%",
+        style={"padding": "16px"},
         background=colors.DASHBOARD_BACKGROUND,
     )
