@@ -4,7 +4,7 @@ import pytest
 from sqlmodel import Session, select
 
 from agrotechEFA2026.db import consultas as c
-from agrotechEFA2026.db.models import Alert, Crop, CropRange, Parcel, SensorData, User
+from agrotechEFA2026.db.models import Alert, Crop, CropRange, Parcel, Sector, Sensor, SensorData, User
 from agrotechEFA2026.db.seguridad import hash_password
 
 AHORA = datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc)
@@ -71,61 +71,113 @@ def test_usuario_inexistente(motor):
         c.listar_parcelas(999)
 
 
-def test_crear_parcela(motor):
-    p = c.crear_parcela(AGRICULTOR, "  Huerto  ", "outdoor", 10, 5)
-    assert (p.name, p.kind, p.owner_id) == ("Huerto", "outdoor", AGRICULTOR)
-    assert c.obtener_parcela(AGRICULTOR, p.id).width_m == 10
+def _sector_nuevo() -> int:
+    """Crea una parcela de prueba y devuelve el id de su único sector (sin sensores)."""
+    parcela = c.crear_parcela(AGRICULTOR, "Huerto", "outdoor", 500, "rectangle")
+    return c.listar_sectores(AGRICULTOR, parcela.id)[0].id
+
+
+def test_crear_parcela_con_su_primer_sector(motor):
+    p = c.crear_parcela(AGRICULTOR, "  Huerto  ", "indoor", 1200, "circle")
+    assert (p.name, p.kind, p.area_m2, p.shape, p.owner_id) == ("Huerto", "indoor", 1200, "circle", AGRICULTOR)
+    [sector] = c.listar_sectores(AGRICULTOR, p.id)
+    assert (sector.name, sector.left_pct, sector.top_pct, sector.width_pct, sector.height_pct) == (
+        "Sector 1", 0, 0, 100, 100)
+    assert sector.crop_id is None  # «sin cultivo» hasta que se elija
 
 
 @pytest.mark.parametrize(
-    "nombre, tipo, ancho, largo",
-    [("", "outdoor", 10, 5), ("X", "garaje", 10, 5), ("X", "indoor", 0, 5), ("X", "indoor", 10, 99999)],
+    "nombre, tipo, area, forma",
+    [
+        ("", "outdoor", 10, "rectangle"),
+        ("X" * 81, "outdoor", 10, "rectangle"),
+        ("X", "garaje", 10, "rectangle"),  # ni interior ni exterior
+        ("X", "indoor", 0, "rectangle"),
+        ("X", "indoor", 1e12, "rectangle"),
+        ("X", "indoor", 10, "triangulo"),
+    ],
 )
-def test_crear_parcela_con_datos_malos(motor, nombre, tipo, ancho, largo):
+def test_crear_parcela_con_datos_malos(motor, nombre, tipo, area, forma):
     with pytest.raises(ValueError):
-        c.crear_parcela(AGRICULTOR, nombre, tipo, ancho, largo)
+        c.crear_parcela(AGRICULTOR, nombre, tipo, area, forma)
 
 
 def test_tecnico_no_crea_parcelas(motor):
     with pytest.raises(PermissionError):
-        c.crear_parcela(TECNICO, "X", "indoor", 10, 5)
+        c.crear_parcela(TECNICO, "X", "indoor", 10, "square")
 
 
-# ---------- Nodos y sensores ----------
-
-def test_colocar_y_mover_nodo(motor):
-    nodo, clave = c.colocar_nodo(AGRICULTOR, INVERNADERO, "Nodo norte", 5, 5, 2, cultivo_id=_cultivo(motor, "tomate"))
-    assert len(clave) > 20 and clave not in nodo.api_key_hash
-    assert c.mover_nodo(AGRICULTOR, nodo.id, 39, 24).pos_x_m == 39
-
-
-def test_nodo_fuera_de_la_parcela(motor):
-    # El invernadero mide 40 x 25 m
-    with pytest.raises(ValueError, match="fuera de la parcela"):
-        c.colocar_nodo(AGRICULTOR, INVERNADERO, "Nodo", 41, 5, 2)
-    with pytest.raises(ValueError, match="fuera de la parcela"):
-        c.mover_nodo(AGRICULTOR, 1, 5, -1)
-
-
-def test_nodo_con_cultivo_inexistente(motor):
-    with pytest.raises(ValueError, match="cultivo"):
-        c.colocar_nodo(AGRICULTOR, INVERNADERO, "Nodo", 5, 5, 2, cultivo_id=999)
+def test_eliminar_parcela_borra_todo_lo_suyo(motor):
+    _guardar(
+        motor,
+        SensorData(sensor_id=SUELO_INVERNADERO, timestamp=AHORA, value=30),
+        Alert(sensor_id=SUELO_INVERNADERO, type="LOW", message="Seco", timestamp=AHORA),
+    )
+    c.crear_accion(AGRICULTOR, INVERNADERO, "irrigation", 10)
+    c.eliminar_parcela(AGRICULTOR, INVERNADERO)
+    assert c.obtener_parcela(AGRICULTOR, INVERNADERO) is None
+    with Session(motor) as s:
+        assert s.exec(select(Sector).where(Sector.parcel_id == INVERNADERO)).all() == []
+        assert s.get(Sensor, SUELO_INVERNADERO) is None
+        assert s.exec(select(SensorData)).all() == []
+        assert s.exec(select(Alert)).all() == []
+    assert len(c.listar_parcelas(AGRICULTOR)) == 2  # las otras siguen ahí
 
 
-def test_tecnico_no_coloca_nodos(motor):
+def test_solo_el_dueno_elimina(motor):
     with pytest.raises(PermissionError):
-        c.colocar_nodo(TECNICO, INVERNADERO, "Nodo", 5, 5, 2)
+        c.eliminar_parcela(TECNICO, INVERNADERO)
+    with pytest.raises(ValueError):
+        c.eliminar_parcela(AGRICULTOR, 999)
+
+
+# ---------- Sectores y sensores ----------
+
+def test_dividir_sector_en_vertical_y_horizontal(motor):
+    sector_id = _sector_nuevo()
+    c.cambiar_cultivo(AGRICULTOR, sector_id, _cultivo(motor, "tomate"))
+    izquierda, derecha = c.dividir_sector(AGRICULTOR, sector_id, "vertical")
+    assert (izquierda.left_pct, izquierda.width_pct) == (0, 50)
+    assert (derecha.left_pct, derecha.width_pct, derecha.height_pct) == (50, 50, 100)
+    assert derecha.name == "Sector 2" and derecha.crop_id == izquierda.crop_id  # conserva el cultivo
+    arriba, abajo = c.dividir_sector(AGRICULTOR, derecha.id, "horizontal")
+    assert (abajo.left_pct, abajo.top_pct, abajo.width_pct, abajo.height_pct) == (50, 50, 50, 50)
+    assert arriba.height_pct == 50 and abajo.name == "Sector 3"
+
+
+def test_dividir_sector_con_datos_malos(motor):
+    sector_id = _sector_nuevo()
+    with pytest.raises(ValueError):
+        c.dividir_sector(AGRICULTOR, sector_id, "diagonal")
+    with pytest.raises(ValueError, match="pequeño"):
+        for _ in range(10):  # 100 → 50 → 25 → ... hasta menos del 2 %
+            c.dividir_sector(AGRICULTOR, sector_id, "vertical")
+    with pytest.raises(PermissionError):
+        c.dividir_sector(TECNICO, sector_id, "vertical")
+
+
+def test_cambiar_cultivo(motor):
+    sector_id = _sector_nuevo()
+    assert c.cambiar_cultivo(AGRICULTOR, sector_id, _cultivo(motor, "mango")).crop_id == _cultivo(motor, "mango")
+    assert c.cambiar_cultivo(AGRICULTOR, sector_id, None).crop_id is None
+    with pytest.raises(ValueError, match="cultivo"):
+        c.cambiar_cultivo(AGRICULTOR, sector_id, 999)
 
 
 def test_crear_sensor_y_validar_umbrales(motor):
-    sensor = c.crear_sensor(AGRICULTOR, 1, "temperature", 15, 30)
+    sector_id = _sector_nuevo()
+    sensor = c.crear_sensor(AGRICULTOR, sector_id, "temperature", 15, 30)
     assert (sensor.unit, sensor.threshold_low) == ("ºC", 15)
+    with pytest.raises(ValueError, match="ya tiene"):
+        c.crear_sensor(AGRICULTOR, sector_id, "temperature")  # uno de cada tipo por sector
     with pytest.raises(ValueError):
-        c.crear_sensor(AGRICULTOR, 1, "ph")
+        c.crear_sensor(AGRICULTOR, sector_id, "ph")
     with pytest.raises(ValueError):
-        c.crear_sensor(AGRICULTOR, 1, "temperature", 30, 15)  # bajo mayor que alto
+        c.crear_sensor(AGRICULTOR, sector_id, "air_humidity", 80, 20)  # bajo mayor que alto
     with pytest.raises(ValueError):
-        c.crear_sensor(AGRICULTOR, 1, "air_humidity", None, 150)  # fuera de 0-100 %
+        c.crear_sensor(AGRICULTOR, sector_id, "soil_moisture", None, 150)  # fuera de 0-100 %
+    with pytest.raises(PermissionError):
+        c.crear_sensor(TECNICO, sector_id, "light")
 
 
 # ---------- Lecturas ----------

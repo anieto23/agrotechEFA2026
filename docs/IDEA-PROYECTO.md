@@ -39,7 +39,7 @@ Si vamos justos de tiempo, se recorta la fase 3, nunca la 1.
 - **F – Calidad y entrega:** tests, despliegue, README/arquitectura y presentación que cuente esta idea.
 
 ## Datos
-Las tablas, la API y las funciones de `db/` están en **`docs/contrato.md`**. Sobre las tablas de las bases se añaden: tipo y medidas de la parcela, **nodos** (el aparato colocado en el plano, con su posición, su zona y su cultivo), cultivos con sus rangos óptimos y acciones.
+Las tablas, la API y las funciones de `db/` están en **`docs/contrato.md`**. Sobre las tablas de las bases se añaden: tipo (interior o exterior), superficie y forma de la parcela, **sectores** (zonas del plano, cada una con su cultivo y sus sensores), cultivos con sus rangos óptimos y acciones.
 
 ## Cosas a tener en cuenta (importante)
 1. **Interior y exterior no se controlan igual.** En exterior no se puede bajar la temperatura: solo regar (y como mucho sombrear). En interior hay además ventilación, calefacción, nebulización y sombreo. **La app solo muestra los botones que tienen sentido** en cada tipo de parcela.
