@@ -1,11 +1,31 @@
 import pytest
 
 from agrotechEFA2026.state.dashboard_state import (
+    _punto_en_poligono,
+    _punto_interior_poligono,
     calcular_medias,
     construir_contorno,
     dividir_sector,
     eliminar_parcela_de_datos,
+    validar_sector_dibujado,
 )
+
+
+def test_punto_etiqueta_de_sector_concavo_queda_dentro_del_contorno():
+    poligono = [
+        (10, 10),
+        (30, 10),
+        (30, 70),
+        (70, 70),
+        (70, 10),
+        (90, 10),
+        (90, 90),
+        (10, 90),
+    ]
+
+    centro = _punto_interior_poligono(poligono)
+
+    assert _punto_en_poligono(centro, poligono, incluir_borde=False)
 
 
 def test_construir_contorno_convierte_vertices_a_poligono_css():
@@ -55,6 +75,122 @@ def test_construir_contorno_rechaza_lados_que_se_cruzan():
 
     with pytest.raises(ValueError, match="cruzarse"):
         construir_contorno(vertices)
+
+
+def test_sector_dibujado_admite_huecos_y_bordes_compartidos():
+    parcela = {"shape": "rectangulo"}
+    sector_existente = {
+        "left": "0",
+        "top": "0",
+        "width": "50",
+        "height": "100",
+        "outline": "",
+    }
+    vertices = [
+        {"x": 50, "y": 0},
+        {"x": 100, "y": 0},
+        {"x": 100, "y": 100},
+        {"x": 50, "y": 100},
+    ]
+
+    contorno = validar_sector_dibujado(parcela, vertices, [sector_existente])
+
+    assert contorno == "polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%)"
+
+
+@pytest.mark.parametrize(
+    ("parcela", "vertices", "error"),
+    [
+        (
+            {"shape": "circulo"},
+            [
+                {"x": 7, "y": 7},
+                {"x": 93, "y": 7},
+                {"x": 93, "y": 93},
+                {"x": 7, "y": 93},
+            ],
+            "dentro de la parcela",
+        ),
+        (
+            {
+                "shape": "dibujada",
+                "outline": (
+                    "polygon(0% 0%, 100% 0%, 100% 100%, 60% 100%, "
+                    "60% 40%, 40% 40%, 40% 100%, 0% 100%)"
+                ),
+            },
+            [
+                {"x": 20, "y": 80},
+                {"x": 80, "y": 80},
+                {"x": 80, "y": 90},
+                {"x": 20, "y": 90},
+            ],
+            "lados del sector",
+        ),
+    ],
+)
+def test_sector_dibujado_rechaza_geometria_fuera_de_la_parcela(
+    parcela, vertices, error
+):
+    with pytest.raises(ValueError, match=error):
+        validar_sector_dibujado(parcela, vertices, [])
+
+
+def test_sector_dibujado_rechaza_solapamiento_parcial():
+    sector_existente = {
+        "left": "40",
+        "top": "20",
+        "width": "40",
+        "height": "50",
+        "outline": "",
+    }
+    vertices = [
+        {"x": 20, "y": 30},
+        {"x": 60, "y": 30},
+        {"x": 60, "y": 60},
+        {"x": 20, "y": 60},
+    ]
+
+    with pytest.raises(ValueError, match="no pueden solaparse"):
+        validar_sector_dibujado({"shape": "rectangulo"}, vertices, [sector_existente])
+
+
+def test_sector_dibujado_rechaza_sector_contenido_en_otro():
+    sector_existente = {
+        "left": "10",
+        "top": "10",
+        "width": "80",
+        "height": "80",
+        "outline": "",
+    }
+    vertices = [
+        {"x": 30, "y": 30},
+        {"x": 70, "y": 30},
+        {"x": 70, "y": 70},
+        {"x": 30, "y": 70},
+    ]
+
+    with pytest.raises(ValueError, match="no pueden solaparse"):
+        validar_sector_dibujado({"shape": "rectangulo"}, vertices, [sector_existente])
+
+
+def test_sector_dibujado_rechaza_solapamiento_de_igual_forma():
+    sector_existente = {
+        "left": "10",
+        "top": "10",
+        "width": "30",
+        "height": "30",
+        "outline": "",
+    }
+    vertices = [
+        {"x": 10, "y": 10},
+        {"x": 40, "y": 10},
+        {"x": 40, "y": 40},
+        {"x": 10, "y": 40},
+    ]
+
+    with pytest.raises(ValueError, match="no pueden solaparse"):
+        validar_sector_dibujado({"shape": "rectangulo"}, vertices, [sector_existente])
 
 
 def test_calcula_media_de_sectores_con_lectura_y_omite_los_sin_datos():

@@ -318,6 +318,175 @@ def tarjeta_media(media: dict[str, rx.Var]) -> rx.Component:
     )
 
 
+def sector_dibujado(sector: dict[str, rx.Var]) -> rx.Component:
+    return rx.box(
+        rx.text(
+            sector["name"],
+            position="absolute",
+            top="50%",
+            left="50%",
+            transform="translate(-50%, -50%)",
+            text_align="center",
+            font_size="12px",
+            font_weight="bold",
+            color=colors.TEXT,
+        ),
+        position="absolute",
+        top="0",
+        right="0",
+        bottom="0",
+        left="0",
+        background="#3D5A43",
+        opacity="0.85",
+        clip_path=sector["outline"],
+        pointer_events="none",
+    )
+
+
+def formulario_dibujo_sectores() -> rx.Component:
+    botones = [
+        rx.button(
+            on_click=DashboardState.agregar_vertice_sector(x, y),
+            aria_label=f"Añadir vértice de sector en {x}%, {y}%",
+            width="100%",
+            height="100%",
+            padding="0",
+            border="1px dashed #646464",
+            border_radius="0",
+            background="transparent",
+            _hover={"background": "#3D5A43"},
+        )
+        for y in PUNTOS_CUADRICULA
+        for x in PUNTOS_CUADRICULA
+    ]
+
+    return rx.vstack(
+        rx.text(
+            "Marca los vértices del sector en la parcela y cierra su contorno. "
+            "Puedes dejar zonas sin sector.",
+            color=colors.TEXT,
+            size="2",
+        ),
+        rx.box(
+            rx.grid(
+                *botones,
+                columns="repeat(7, minmax(0, 1fr))",
+                rows="repeat(7, minmax(0, 1fr))",
+                width="100%",
+                height="100%",
+            ),
+            rx.foreach(
+                DashboardState.sectores_dibujados_temporales,
+                sector_dibujado,
+            ),
+            rx.cond(
+                DashboardState.vertices_sector_en_edicion.length() >= 3,
+                rx.box(
+                    position="absolute",
+                    top="0",
+                    right="0",
+                    bottom="0",
+                    left="0",
+                    background="#E7B85C",
+                    opacity="0.55",
+                    clip_path=DashboardState.contorno_sector_previsualizacion,
+                    pointer_events="none",
+                ),
+                rx.fragment(),
+            ),
+            rx.foreach(DashboardState.vertices_sector_en_edicion, punto_contorno),
+            position="relative",
+            width="100%",
+            max_width="480px",
+            aspect_ratio="1 / 1",
+            overflow="hidden",
+            border="1px solid #747474",
+            border_radius="8px",
+            clip_path=DashboardState.contorno_parcela_css,
+            background="#202020",
+            role="group",
+            aria_label="Cuadrícula para dibujar sectores dentro de la parcela",
+        ),
+        rx.text(
+            "Vértices del sector actual: ",
+            DashboardState.vertices_sector_en_edicion.length(),
+            " · Sectores dibujados: ",
+            DashboardState.sectores_dibujados_temporales.length(),
+            color=colors.TEXT,
+            size="2",
+        ),
+        rx.cond(
+            DashboardState.error_dibujo_sector != "",
+            rx.callout(
+                DashboardState.error_dibujo_sector,
+                icon="triangle_alert",
+                color_scheme="red",
+                width="100%",
+            ),
+            rx.fragment(),
+        ),
+        rx.cond(
+            DashboardState.mensaje_dibujo_sector != "",
+            rx.callout(
+                DashboardState.mensaje_dibujo_sector,
+                icon="circle_check",
+                color_scheme="green",
+                width="100%",
+            ),
+            rx.fragment(),
+        ),
+        rx.hstack(
+            rx.cond(
+                DashboardState.contorno_sector_cerrado,
+                rx.button(
+                    "Añadir sector",
+                    on_click=DashboardState.crear_sector_dibujado,
+                    color_scheme="green",
+                ),
+                rx.button(
+                    "Cerrar sector",
+                    on_click=DashboardState.cerrar_contorno_sector,
+                    color_scheme="green",
+                    variant="soft",
+                    disabled=DashboardState.vertices_sector_en_edicion.length() < 3,
+                ),
+            ),
+            rx.button(
+                "Deshacer último",
+                on_click=DashboardState.deshacer_vertice_sector,
+                variant="soft",
+                disabled=DashboardState.vertices_sector_en_edicion.length() == 0,
+            ),
+            rx.button(
+                "Borrar puntos",
+                on_click=DashboardState.limpiar_contorno_sector,
+                variant="soft",
+                disabled=DashboardState.vertices_sector_en_edicion.length() == 0,
+            ),
+            width="100%",
+            wrap="wrap",
+        ),
+        rx.hstack(
+            rx.button(
+                "Terminar distribución",
+                on_click=DashboardState.terminar_dibujo_sectores,
+                color_scheme="green",
+                disabled=DashboardState.sectores_dibujados_temporales.length() == 0,
+            ),
+            rx.button(
+                "Cancelar",
+                on_click=DashboardState.cancelar_dibujo_sectores,
+                variant="soft",
+            ),
+            width="100%",
+            wrap="wrap",
+        ),
+        spacing="3",
+        align="start",
+        width="100%",
+    )
+
+
 def detalle_parcela() -> rx.Component:
     return rx.vstack(
         rx.hstack(
@@ -387,12 +556,60 @@ def detalle_parcela() -> rx.Component:
                 align="center",
                 wrap="wrap",
             ),
-            parcela_map(),
-            rx.text(
-                "Cada división crea un sector nuevo; puedes seguir subdividiendo "
-                "cualquiera de ellos.",
-                color=colors.TEXT,
-                size="2",
+            rx.cond(
+                DashboardState.modo_dibujo_sectores,
+                formulario_dibujo_sectores(),
+                rx.vstack(
+                    rx.button(
+                        "Dibujar sectores",
+                        on_click=DashboardState.solicitar_redibujar_sectores,
+                        color_scheme="green",
+                        variant="soft",
+                    ),
+                    rx.cond(
+                        DashboardState.confirmar_redibujo_sectores_pendiente,
+                        rx.callout(
+                            rx.vstack(
+                                rx.text(
+                                    "Al guardar, se sustituirán los sectores actuales "
+                                    "y se perderán sus sensores y lecturas de ejemplo. "
+                                    "Si cancelas el dibujo, se conservarán.",
+                                    color=colors.TEXT,
+                                    size="2",
+                                ),
+                                rx.hstack(
+                                    rx.button(
+                                        "Empezar a dibujar",
+                                        on_click=DashboardState.confirmar_redibujar_sectores,
+                                        color_scheme="red",
+                                    ),
+                                    rx.button(
+                                        "Cancelar",
+                                        on_click=DashboardState.cancelar_solicitud_redibujar_sectores,
+                                        variant="soft",
+                                    ),
+                                    wrap="wrap",
+                                ),
+                                spacing="2",
+                                align="start",
+                            ),
+                            icon="triangle_alert",
+                            color_scheme="orange",
+                            width="100%",
+                        ),
+                        rx.fragment(),
+                    ),
+                    parcela_map(),
+                    rx.text(
+                        "Los sectores se dibujan dentro del contorno de la parcela. "
+                        "Se permiten huecos, pero no solapamientos.",
+                        color=colors.TEXT,
+                        size="2",
+                    ),
+                    spacing="3",
+                    align="start",
+                    width="100%",
+                ),
             ),
             spacing="3",
             align="start",
@@ -509,37 +726,6 @@ def detalle_sector() -> rx.Component:
                         size="2",
                     ),
                     rx.fragment(),
-                ),
-                spacing="3",
-                align="start",
-                width="100%",
-            ),
-            width="100%",
-        ),
-        rx.card(
-            rx.vstack(
-                rx.heading("Dividir este sector", size="4", color=colors.TEXT),
-                rx.text(
-                    "El sector actual conserva sus sensores; el nuevo empieza "
-                    "vacío para que le añadas los suyos.",
-                    color=colors.TEXT,
-                    size="2",
-                ),
-                rx.hstack(
-                    rx.button(
-                        "Dividir en vertical",
-                        on_click=DashboardState.dividir_sector("vertical"),
-                        color_scheme="green",
-                        variant="soft",
-                    ),
-                    rx.button(
-                        "Dividir en horizontal",
-                        on_click=DashboardState.dividir_sector("horizontal"),
-                        color_scheme="green",
-                        variant="soft",
-                    ),
-                    width="100%",
-                    wrap="wrap",
                 ),
                 spacing="3",
                 align="start",

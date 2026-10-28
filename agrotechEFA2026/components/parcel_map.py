@@ -5,7 +5,7 @@ from ..state.dashboard_state import DashboardState
 
 
 def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
-    """Celda del plano; sus límites se expresan como porcentajes de la parcela."""
+    """Sector rectangular o poligonal, ubicado en porcentajes del plano."""
 
     return rx.button(
         rx.vstack(
@@ -17,16 +17,29 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
             justify="center",
             width="100%",
             height="100%",
+            position="absolute",
+            top=rx.cond(
+                sector["outline"] != "",
+                sector["label_y"] + "%",
+                "50%",
+            ),
+            left=rx.cond(
+                sector["outline"] != "",
+                sector["label_x"] + "%",
+                "50%",
+            ),
+            transform="translate(-50%, -50%)",
         ),
         position="absolute",
-        left=sector["left"] + "%",
-        top=sector["top"] + "%",
-        width=sector["width"] + "%",
-        height=sector["height"] + "%",
+        left=rx.cond(sector["outline"] != "", "0%", sector["left"] + "%"),
+        top=rx.cond(sector["outline"] != "", "0%", sector["top"] + "%"),
+        width=rx.cond(sector["outline"] != "", "100%", sector["width"] + "%"),
+        height=rx.cond(sector["outline"] != "", "100%", sector["height"] + "%"),
         padding="2",
         border="1px solid #CACACA",
         border_radius="0",
         background="#343434",
+        clip_path=rx.cond(sector["outline"] != "", sector["outline"], "inset(0)"),
         _hover={"background": "#3D5A43"},
         color=colors.TEXT,
         white_space="normal",
