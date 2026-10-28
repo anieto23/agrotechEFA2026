@@ -40,15 +40,19 @@ def parcela_map() -> rx.Component:
 
     forma = DashboardState.parcela_seleccionada["shape"]
     recorte = rx.cond(
-        forma == "circulo",
-        "ellipse(49% 48% at 50% 50%)",
+        forma == "dibujada",
+        DashboardState.parcela_seleccionada["outline"],
         rx.cond(
-            forma == "cuadrado",
-            "inset(0 16%)",
+            forma == "circulo",
+            "ellipse(49% 48% at 50% 50%)",
             rx.cond(
-                forma == "poligono",
-                "polygon(18% 0, 83% 8%, 100% 42%, 76% 100%, 15% 92%, 0 35%)",
-                "inset(0)",
+                forma == "cuadrado",
+                "inset(0 16%)",
+                rx.cond(
+                    forma == "poligono",
+                    "polygon(18% 0, 83% 8%, 100% 42%, 76% 100%, 15% 92%, 0 35%)",
+                    "inset(0)",
+                ),
             ),
         ),
     )
@@ -58,7 +62,11 @@ def parcela_map() -> rx.Component:
         position="relative",
         width="100%",
         max_width=rx.cond(forma == "circulo", "480px", "760px"),
-        aspect_ratio=rx.cond(forma == "circulo", "1 / 1", "3 / 2"),
+        aspect_ratio=rx.cond(
+            (forma == "circulo") | (forma == "dibujada"),
+            "1 / 1",
+            "3 / 2",
+        ),
         overflow="hidden",
         clip_path=recorte,
         background="#202020",

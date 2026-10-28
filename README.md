@@ -81,13 +81,15 @@ En Windows usa `127.0.0.1` y no `localhost`: con `localhost` cada envío tarda u
 
 La aplicación registra la página principal desde `agrotechEFA2026/agrotechEFA2026.py`.
 El panel en `agrotechEFA2026/pages/dashboard.py` permite probar la navegación entre
-parcelas, sectores y mediciones. La maqueta admite crear parcelas con superficie y forma,
-eliminarlas con confirmación, dividir sectores en horizontal o vertical, asignar cultivos y
-añadir sensores. Al eliminar una parcela también se eliminan sus sectores de muestra. Las
-medias ignoran sectores que todavía no tienen lectura para esa magnitud.
+parcelas, sectores y mediciones. La maqueta admite crear parcelas con superficie y forma predefinida, o dibujar un contorno
+marcando vértices en una cuadrícula. El dibujo permite deshacer el último punto y borrar los
+puntos y cerrar el contorno; no admite lados cruzados. También permite eliminar parcelas
+con confirmación, dividir sectores en horizontal o vertical, asignar cultivos y añadir
+sensores. Al eliminar una parcela también se eliminan sus sectores de muestra. Las medias
+ignoran sectores que todavía no tienen lectura para esa magnitud.
 
 Esta parte aún usa datos de ejemplo en memoria: los cambios no se guardan al cerrar la
 sesión. El contrato de base de datos actual no incluye formas de parcela ni sectores; antes
-de conectar la maqueta habrá que acordar y añadir esos datos con A y C. El plano es
-esquemático: el polígono es una forma de muestra y los sectores se subdividen con límites
-rectos, no se dibujan todavía con precisión sobre el terreno.
+de conectar la maqueta habrá que acordar y añadir esos datos con A y C. El contorno dibujado
+se guarda como proporciones de la cuadrícula, no representa coordenadas reales ni está a
+escala. El plano es esquemático y los sectores se subdividen con límites rectos.

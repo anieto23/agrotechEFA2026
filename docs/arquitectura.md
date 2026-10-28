@@ -4,17 +4,20 @@
 
 - `agrotechEFA2026/agrotechEFA2026.py` crea la aplicación Reflex y registra la página principal.
 - `agrotechEFA2026/pages/dashboard.py` compone el listado de parcelas, el resumen y las vistas de parcela y sector.
-- `agrotechEFA2026/state/dashboard_state.py` mantiene los datos de demostración por sesión, valida el alta temporal, confirma la eliminación de parcelas y sus sectores, divide sectores y calcula medias por magnitud.
-- `agrotechEFA2026/components/parcel_map.py` muestra la forma esquemática de una parcela y permite abrir sus sectores.
+- `agrotechEFA2026/state/dashboard_state.py` mantiene los datos de demostración por sesión,
+  valida el alta temporal y los contornos dibujados, confirma la eliminación de parcelas y
+  sus sectores, divide sectores y calcula medias por magnitud.
+- `agrotechEFA2026/components/parcel_map.py` muestra la forma de una parcela y permite abrir sus sectores.
 - `agrotechEFA2026/components/sensor_card.py` contiene la tarjeta reutilizable de lectura.
 - `agrotechEFA2026/components/colors.py` centraliza los colores usados por el panel.
 
 El panel permite navegar e interactuar con datos ficticios en memoria; no persiste cambios ni
 se conecta a la base de datos. La forma y los sectores ya están en el contrato y en `db/`; falta
-conectar el panel a esas funciones.
-La media de cada magnitud incluye los sectores que sí tienen una lectura y excluye los que
-no tienen sensor o dato disponible. El plano es esquemático: el polígono es una forma de
-muestra y los sectores se dividen mediante cortes rectos.
+conectar el panel a esas funciones. El usuario puede dibujar el contorno con vértices ajustados
+a una cuadrícula normalizada; se rechazan contornos sin superficie o con lados cruzados. El
+dibujo no representa coordenadas reales ni está a escala. La media de cada magnitud incluye
+los sectores que sí tienen una lectura y excluye los que no tienen sensor o dato disponible;
+los sectores se dividen mediante cortes rectos.
 
 ## Base de datos
 
