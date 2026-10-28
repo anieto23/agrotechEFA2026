@@ -26,11 +26,8 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
         padding="2",
         border="1px solid #CACACA",
         border_radius="0",
-        background=rx.cond(
-            DashboardState.sector_id_seleccionado == sector["id"],
-            "#3D5A43",
-            "#343434",
-        ),
+        background="#343434",
+        _hover={"background": "#3D5A43"},
         color=colors.TEXT,
         white_space="normal",
         on_click=DashboardState.abrir_sector(sector["id"]),

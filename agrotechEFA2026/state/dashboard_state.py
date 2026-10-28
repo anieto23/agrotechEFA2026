@@ -12,7 +12,7 @@ FORMAS = {
 }
 
 CULTIVOS = {
-    "Sin cultivo": "🌱",
+    "Sin cultivo": "🌱❌",
     "Tomate": "🍅",
     "Aguacate": "🥑",
     "Mango": "🥭",
