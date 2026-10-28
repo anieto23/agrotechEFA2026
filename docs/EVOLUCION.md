@@ -4,7 +4,8 @@ Registro de cómo ha ido creciendo el proyecto, como piden las bases del reto. L
 **Cada PR añade aquí una línea** (fecha, quién, qué y número de PR). El detalle está en el historial de GitHub.
 
 ## 28-oct-2026
-- **efapro (A, datos):** la base de datos se adapta al panel de B: la parcela guarda superficie, forma e interior/exterior, y se divide en sectores con su cultivo y sus sensores. Nuevas funciones para el panel: listar, dividir y cambiar el cultivo de un sector, borrar una parcela con todo lo suyo y generar la clave del aparato de un sector. 77 tests.
+- **efapro (A, datos):** migraciones con Alembic: los cambios de tablas ya no borran datos; la app las aplica al arrancar y los tests avisan si alguien cambia las tablas sin su migración. Probado: añadir una columna a una copia de la base real conservó las 1164 lecturas. 83 tests.
+- **efapro (A, datos):** la base de datos se adapta al panel de B: la parcela guarda superficie, forma e interior/exterior, y se divide en sectores con su cultivo y sus sensores. Nuevas funciones para el panel: listar, dividir y cambiar el cultivo de un sector, borrar una parcela con todo lo suyo y generar la clave del aparato de un sector. 77 tests. (PR #12)
 - **anieto23 (B, panel):** maqueta del panel con varias parcelas, formas y sectores que se dividen, con cultivo y sensores por sector. (PR #11)
 
 ## 26-oct-2026

@@ -35,9 +35,20 @@ Muestra las contraseñas de `agricultor` y `tecnico` si no están en `AGROTECH_P
 el simulador (`--claves claves_demo.json`).
 
 Cada parcela se divide en **sectores** (zonas con su cultivo y como mucho un sensor de cada
-tipo). Si cambia la estructura de las tablas y tu `agrotech.db` es de una versión anterior,
-bórrala y vuelve a lanzar el comando de arriba: son datos de prueba. (Más adelante se usarán
-migraciones con Alembic para no perder datos.)
+tipo).
+
+### Migraciones (cambiar las tablas sin perder datos)
+
+Los cambios de tablas se guardan como «recetas» en `migrations/versions/` (Alembic). La app
+aplica las que falten al arrancar; también se puede hacer a mano:
+
+```bash
+python -m agrotechEFA2026.db.migrar                          # poner agrotech.db al día
+python -m agrotechEFA2026.db.migrar nueva "añade X a Y"      # tras cambiar db/models.py
+python -m agrotechEFA2026.db.migrar unir                     # si dos personas crearon una a la vez
+```
+
+Quien cambie `db/models.py` sube también su migración (los tests fallan si falta).
 
 ## API REST
 

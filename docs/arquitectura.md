@@ -26,6 +26,8 @@ muestra y los sectores se dividen mediante cortes rectos.
 
 - `agrotechEFA2026/db/lecturas.py`: valida y guarda las lecturas de los aparatos (clave del sector, tipo, unidad, rango y fecha) y crea una alerta si salen del umbral o del óptimo, sin repetirla mientras haya otra igual sin leer.
 
+- `agrotechEFA2026/db/migrar.py` y `migrations/`: migraciones con **Alembic** sobre `SQLModel.metadata`. La app aplica las pendientes al arrancar (`actualizar_bd()`), así un cambio de tablas no borra datos. La configuración no va en un `alembic.ini` en la raíz porque Reflex usa ese nombre para su propio sistema. En SQLite se usa el modo *batch* (copia la tabla por dentro para poder cambiar columnas). Una base creada antes de las migraciones se adopta como revisión `0001` si ya tiene sectores.
+
 ## API REST
 
 `agrotechEFA2026/api/` es una app **FastAPI** que Reflex monta junto a la suya con `rx.App(api_transformer=api)` (así una sola app sirve la web y la API). Las rutas solo traducen HTTP ↔ funciones de `db/`: la lógica está en `db/` para poder probarla sin servidor. Los errores de validación se devuelven como `{"detail": "<texto>"}`, como pide el contrato.

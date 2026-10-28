@@ -119,10 +119,20 @@ Hazlo siempre después de un `git pull` o `git merge origin/main`, aunque la per
 1. **Python:** `python --version` (en Windows también `py -0p` para ver los instalados). Hace falta **3.11 o superior**; si no lo hay, para y díselo.
 2. **Entorno virtual:** si no existe la carpeta `.venv`, créala con ese Python (`python -m venv .venv`, o `py -3.12 -m venv .venv`). Usa siempre el Python de dentro: `.venv\Scripts\python.exe` en Windows, `.venv/bin/python` en Linux/Mac.
 3. **Dependencias:** `<python del .venv> -m pip install -r requirements.txt`. Hazlo siempre: si no ha cambiado nada tarda unos segundos, y si alguien añadió una librería la instala.
-4. **Tests:** `<python del .venv> -m pytest -q`. Enseña el resultado real («50 passed»). Si algo falla, explícale qué y de quién parece (`git log -3 -- <archivo>`), no lo arregles a ciegas.
-5. Dile en una frase cómo está: «Todo bien: dependencias al día y X tests en verde» o qué falla.
+4. **Base de datos:** `<python del .venv> -m agrotechEFA2026.db.migrar`. Aplica las migraciones nuevas a su `agrotech.db` **sin perder datos**. Si dice que es «de una versión antigua», explícale que son datos de prueba y, con su sí, bórrala y créala con `-m agrotechEFA2026.db.seed`.
+5. **Tests:** `<python del .venv> -m pytest -q`. Enseña el resultado real («50 passed»). Si algo falla, explícale qué y de quién parece (`git log -3 -- <archivo>`), no lo arregles a ciegas.
+6. Dile en una frase cómo está: «Todo bien: dependencias y base de datos al día, X tests en verde» o qué falla.
 - `.venv`, `agrotech.db` y `claves_demo.json` son de cada ordenador: nunca se suben (ya están en `.gitignore`).
 - Si al compilar o arrancar Reflex cambia `reflex.lock/package.json` sin que nadie lo haya tocado a propósito (lo reescribe en una sola línea), no lo subas: `git restore reflex.lock/package.json`.
+
+### Si cambias las tablas (`agrotechEFA2026/db/models.py`)
+Cada cambio de tablas lleva su **migración** (una «receta» que cambia la base de datos de los demás sin borrar sus datos):
+1. Antes de cambiar nada, `<python del .venv> -m agrotechEFA2026.db.migrar` (su base al día).
+2. Cambia `models.py` y luego `<python del .venv> -m agrotechEFA2026.db.migrar nueva "<qué cambia>"`. Crea `migrations/versions/000N_….py`.
+3. **Léela** antes de subirla: que solo haga lo que querías (Alembic a veces propone borrar algo que no toca). Si una columna nueva es obligatoria (`nullable=False`) y la tabla ya tiene filas, dale un valor por defecto (`server_default`).
+4. Sube la migración en el mismo commit que `models.py`. Avisa en el grupo: el contrato cambia.
+- `tests/test_migraciones.py` falla si alguien cambia `models.py` sin migración, o si dos personas crearon una a la vez (dos «cabezas»). En ese caso, en la rama de quien llega segundo: `<python del .venv> -m agrotechEFA2026.db.migrar unir`, que crea una migración que junta las dos; luego tests y commit.
+- Nunca edites una migración que ya está en `main`: haz otra nueva que corrija.
 
 ### «Actualiza mi rama» (o si lleva más de un día en la misma rama)
 `git fetch` → `git merge origin/main` → «Comprobar que todo está bien». Explica que así trae lo que han hecho los demás y los conflictos salen pequeños.
