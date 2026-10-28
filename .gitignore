@@ -226,3 +226,6 @@ __marimo__/
 
 # Claves de los aparatos de ejemplo (db/seed.py)
 claves_demo.json
+
+# Caché de la previsión de Open-Meteo
+data/prevision.json
