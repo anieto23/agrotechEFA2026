@@ -34,6 +34,11 @@ Muestra las contraseñas de `agricultor` y `tecnico` si no están en `AGROTECH_P
 `AGROTECH_PASS_TECHNICIAN`, y guarda las claves de los aparatos en `claves_demo.json` para
 el simulador (`--claves claves_demo.json`).
 
+Cada parcela se divide en **sectores** (zonas con su cultivo y como mucho un sensor de cada
+tipo). Si cambia la estructura de las tablas y tu `agrotech.db` es de una versión anterior,
+bórrala y vuelve a lanzar el comando de arriba: son datos de prueba. (Más adelante se usarán
+migraciones con Alembic para no perder datos.)
+
 ## API REST
 
 La API (FastAPI) va dentro de la app de Reflex, en el puerto 8000. Con la app en marcha, la

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from agrotechEFA2026.api import api
+from agrotechEFA2026.db.consultas import generar_clave_sector
 from agrotechEFA2026.db.models import Alert, Crop, CropRange, SensorData
 
 SUELO = 3  # humedad del suelo del invernadero, umbral bajo 40 %
@@ -84,6 +85,12 @@ def test_rechaza_lecturas_malas(cliente, claves, motor, cambios, codigo):
 def test_clave_de_otra_parcela_no_vale(cliente, claves):
     # La clave del sensor 5 es de la parcela «Aguacates», no del invernadero
     assert _enviar(cliente, claves, clave=claves["5"]).status_code == 401
+
+
+def test_clave_nueva_del_sector_sustituye_a_la_vieja(cliente, claves):
+    nueva = generar_clave_sector(1, 1)  # agricultor, sector del invernadero
+    assert _enviar(cliente, claves, clave=nueva).status_code == 201
+    assert _enviar(cliente, claves).status_code == 401  # la del seed ya no vale
 
 
 def test_sensor_id_del_cuerpo_distinto_al_de_la_direccion(cliente, claves):

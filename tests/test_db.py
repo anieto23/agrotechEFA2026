@@ -10,9 +10,9 @@ from agrotechEFA2026.db.models import (
     TIPOS_MEDIDA,
     Crop,
     CropRange,
-    Node,
     Parcel,
     ParcelViewer,
+    Sector,
     Sensor,
     User,
 )
@@ -53,7 +53,7 @@ def test_verificar_password_con_formato_roto():
 def test_seed_crea_lo_del_contrato(s, claves):
     assert len(s.exec(select(User)).all()) == 2
     assert len(s.exec(select(Parcel)).all()) == 3
-    assert len(s.exec(select(Node)).all()) == 3
+    assert len(s.exec(select(Sector)).all()) == 3
     assert len(s.exec(select(Sensor)).all()) == 12
     assert len(s.exec(select(ParcelViewer)).all()) == 3
     assert {c.name for c in s.exec(select(Crop))} == set(seed.CULTIVOS_DEMO)
@@ -66,7 +66,7 @@ def test_seed_no_guarda_secretos_en_claro(s, claves):
         assert verificar_password(PASSWORDS[usuario.role], usuario.password_hash)
         assert PASSWORDS[usuario.role] not in usuario.password_hash
     for sensor in s.exec(select(Sensor)):
-        assert sensor.node.api_key_hash == hash_api_key(claves[str(sensor.id)])
+        assert sensor.sector.api_key_hash == hash_api_key(claves[str(sensor.id)])
 
 
 def test_ids_de_sensores_coinciden_con_el_simulador(s, claves):
@@ -75,17 +75,23 @@ def test_ids_de_sensores_coinciden_con_el_simulador(s, claves):
         for tipo in TIPOS_MEDIDA:
             sensor = s.get(Sensor, simulador.sensor_id(p, tipo))
             assert sensor.type == tipo
-            assert sensor.node.parcel.name == p.nombre
+            assert sensor.sector.parcel.name == p.nombre
 
 
 def test_tipos_de_medida_iguales_que_el_simulador():
     assert TIPOS_MEDIDA == simulador.TIPOS
 
 
-def test_nodos_dentro_de_su_parcela(s, claves):
-    for nodo in s.exec(select(Node)):
-        assert 0 <= nodo.pos_x_m <= nodo.parcel.width_m
-        assert 0 <= nodo.pos_y_m <= nodo.parcel.length_m
+def test_cada_parcela_de_ejemplo_tiene_un_sector_entero(s, claves):
+    for sector in s.exec(select(Sector)):
+        assert (sector.left_pct, sector.top_pct, sector.width_pct, sector.height_pct) == (0, 0, 100, 100)
+        assert sector.crop_id is not None
+
+
+def test_un_solo_sensor_de_cada_tipo_por_sector(s, claves):
+    s.add(Sensor(sector_id=1, type="temperature", unit="ºC"))
+    with pytest.raises(IntegrityError):
+        s.commit()
 
 
 def test_exterior_no_permite_controlar_temperatura():

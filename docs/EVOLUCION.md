@@ -3,8 +3,12 @@
 Registro de cómo ha ido creciendo el proyecto, como piden las bases del reto. Lo más reciente, arriba.
 **Cada PR añade aquí una línea** (fecha, quién, qué y número de PR). El detalle está en el historial de GitHub.
 
+## 28-oct-2026
+- **efapro (A, datos):** la base de datos se adapta al panel de B: la parcela guarda superficie, forma e interior/exterior, y se divide en sectores con su cultivo y sus sensores. Nuevas funciones para el panel: listar, dividir y cambiar el cultivo de un sector, borrar una parcela con todo lo suyo y generar la clave del aparato de un sector. 77 tests.
+- **anieto23 (B, panel):** maqueta del panel con varias parcelas, formas y sectores que se dividen, con cultivo y sensores por sector. (PR #11)
+
 ## 26-oct-2026
-- **efapro (A, datos):** API REST con FastAPI dentro de Reflex; primera ruta: entrada de lecturas de los sensores con clave del aparato, validación y alertas. Probada con el simulador: 1164 de 1164 lecturas guardadas. 65 tests. Las IAs del equipo comprueban ahora el entorno (Python, dependencias y tests) cada vez que traen lo de los demás.
+- **efapro (A, datos):** API REST con FastAPI dentro de Reflex; primera ruta: entrada de lecturas de los sensores con clave del aparato, validación y alertas. Probada con el simulador: 1164 de 1164 lecturas guardadas. 65 tests. Las IAs del equipo comprueban ahora el entorno (Python, dependencias y tests) cada vez que traen lo de los demás. (PR #10)
 - **efapro (A, datos):** se crea este registro y la regla de que cada PR añada su línea (`AGENTS.md`). (PR #9)
 - **efapro (A, datos):** funciones de acceso a datos para la interfaz, con permisos por usuario y validación (posición dentro de la parcela, umbrales, acciones según interior o exterior). 50 tests. (PR #8)
 - **efapro (A, datos):** base de datos con SQLModel: tablas del contrato, conexión, contraseñas y claves con hash y datos de ejemplo con los mismos ids que el simulador. Se corrige la versión de Python pedida (3.15 → 3.11+) y se completan las dependencias. (PR #7)

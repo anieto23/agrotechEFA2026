@@ -8,19 +8,21 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Session, col, select
+from sqlalchemy import delete
+from sqlmodel import Session, col, func, select
 
 from .models import (
     ACCIONES_POR_TIPO,
+    FORMAS_PARCELA,
     TIPOS_MEDIDA,
     TIPOS_PARCELA,
     Action,
     Alert,
     Crop,
     CropRange,
-    Node,
     Parcel,
     ParcelViewer,
+    Sector,
     Sensor,
     SensorData,
     User,
@@ -28,7 +30,8 @@ from .models import (
 from .seguridad import generar_api_key, hash_api_key
 from .session import sesion
 
-LADO_MAXIMO_M = 5000.0  # 5 km: más grande ya no es una parcela, es un error al teclear
+AREA_MAXIMA_M2 = 10_000_000.0  # 1000 ha: más grande ya no es una parcela, es un error al teclear
+LADO_MINIMO_PCT = 2.0  # por debajo, el sector ya no se ve ni se puede pulsar en el plano
 LIMITE_HISTORICO = 5000
 DURACION_MAXIMA_MIN = 240
 
@@ -37,8 +40,8 @@ DURACION_MAXIMA_MIN = 240
 @dataclass
 class EstadoSensor:
     sensor_id: int
-    node_id: int
-    node_name: str
+    sector_id: int
+    sector_name: str
     type: str
     unit: str
     value: Optional[float]
@@ -76,19 +79,13 @@ def _en_utc(fecha: datetime) -> datetime:
     return fecha.replace(tzinfo=timezone.utc) if fecha.tzinfo is None else fecha.astimezone(timezone.utc)
 
 
-def _texto(valor: str, que: str, maximo: int = 100) -> str:
+def _texto(valor: str, que: str, maximo: int = 80) -> str:
     valor = (valor or "").strip()
     if not valor:
         raise ValueError(f"Falta {que}.")
     if len(valor) > maximo:
         raise ValueError(f"{que.capitalize()} no puede tener más de {maximo} caracteres.")
     return valor
-
-
-def _medida(valor: float, que: str, maximo: float) -> float:
-    if not 0 < valor <= maximo:
-        raise ValueError(f"{que.capitalize()} debe estar entre 0 y {maximo:g} m.")
-    return float(valor)
 
 
 # ---------- Permisos ----------
@@ -125,18 +122,25 @@ def _parcela_editable(s: Session, usuario_id: int, parcela_id: int) -> Parcel:
     return parcela
 
 
+def _sector_editable(s: Session, usuario_id: int, sector_id: int) -> tuple[Sector, Parcel]:
+    sector = s.get(Sector, sector_id)
+    if sector is None:
+        raise ValueError("El sector no existe.")
+    return sector, _parcela_editable(s, usuario_id, sector.parcel_id)
+
+
 def _ids_parcelas_visibles(s: Session, usuario_id: int) -> list[int]:
     propias = s.exec(select(Parcel.id).where(Parcel.owner_id == usuario_id)).all()
     compartidas = s.exec(select(ParcelViewer.parcel_id).where(ParcelViewer.user_id == usuario_id)).all()
     return list(set(propias) | set(compartidas))
 
 
-def limites_sensor(s: Session, sensor: Sensor, nodo: Node) -> tuple[Optional[float], Optional[float]]:
-    """Umbrales del sensor; los que falten se toman del óptimo del cultivo del nodo."""
+def limites_sensor(s: Session, sensor: Sensor, sector: Sector) -> tuple[Optional[float], Optional[float]]:
+    """Umbrales del sensor; los que falten se toman del óptimo del cultivo del sector."""
     rango = None
-    if nodo.crop_id is not None:
+    if sector.crop_id is not None:
         rango = s.exec(
-            select(CropRange).where(CropRange.crop_id == nodo.crop_id, CropRange.type == sensor.type)
+            select(CropRange).where(CropRange.crop_id == sector.crop_id, CropRange.type == sensor.type)
         ).first()
     minimo = sensor.threshold_low if sensor.threshold_low is not None else (rango.optimal_min if rango else None)
     maximo = sensor.threshold_high if sensor.threshold_high is not None else (rango.optimal_max if rango else None)
@@ -161,101 +165,123 @@ def obtener_parcela(usuario_id: int, parcela_id: int) -> Optional[Parcel]:
             return None
 
 
-def crear_parcela(usuario_id: int, nombre: str, tipo: str, ancho_m: float, largo_m: float) -> Parcel:
+def crear_parcela(usuario_id: int, nombre: str, tipo: str, area_m2: float, forma: str) -> Parcel:
+    """Crea la parcela con un primer sector que la ocupa entera, como hace el panel."""
     with sesion() as s:
         usuario = _usuario(s, usuario_id)
         if usuario.role != "farmer":
             raise PermissionError("Solo un agricultor puede crear parcelas.")
         if tipo not in TIPOS_PARCELA:
-            raise ValueError("El tipo de parcela debe ser interior (indoor) o exterior (outdoor).")
+            raise ValueError("Elige si la parcela es de interior (invernadero) o de exterior.")
+        if forma not in FORMAS_PARCELA:
+            raise ValueError("Selecciona una forma válida.")
+        if not 0 < area_m2 <= AREA_MAXIMA_M2:
+            raise ValueError(f"La superficie debe estar entre 0 y {AREA_MAXIMA_M2:,.0f} m².".replace(",", "."))
         parcela = Parcel(
-            owner_id=usuario.id,
-            name=_texto(nombre, "el nombre"),
-            kind=tipo,
-            width_m=_medida(ancho_m, "el ancho", LADO_MAXIMO_M),
-            length_m=_medida(largo_m, "el largo", LADO_MAXIMO_M),
+            owner_id=usuario.id, name=_texto(nombre, "el nombre"), kind=tipo, area_m2=float(area_m2), shape=forma
         )
         s.add(parcela)
+        s.flush()  # para tener el id de la parcela
+        s.add(Sector(parcel_id=parcela.id, name="Sector 1", api_key_hash=hash_api_key(generar_api_key())))
         s.commit()
         return parcela
 
 
-# ---------- Nodos y sensores ----------
-
-def _comprobar_posicion(parcela: Parcel, x_m: float, y_m: float) -> None:
-    if not (0 <= x_m <= parcela.width_m and 0 <= y_m <= parcela.length_m):
-        raise ValueError(
-            f"La posición ({x_m:g}, {y_m:g}) m queda fuera de la parcela "
-            f"({parcela.width_m:g} x {parcela.length_m:g} m)."
-        )
-
-
-def colocar_nodo(
-    usuario_id: int,
-    parcela_id: int,
-    nombre: str,
-    x_m: float,
-    y_m: float,
-    radio_m: float,
-    cultivo_id: Optional[int] = None,
-) -> tuple[Node, str]:
-    """Coloca un aparato en el plano. Devuelve el nodo y su clave, que solo se muestra esta vez."""
+def eliminar_parcela(usuario_id: int, parcela_id: int) -> None:
+    """Borra la parcela con todo lo suyo: sectores, sensores, lecturas, alertas y acciones."""
     with sesion() as s:
-        parcela = _parcela_editable(s, usuario_id, parcela_id)
-        _comprobar_posicion(parcela, x_m, y_m)
-        radio = _medida(radio_m, "el radio", max(parcela.width_m, parcela.length_m))
+        _parcela_editable(s, usuario_id, parcela_id)
+        sectores = select(Sector.id).where(Sector.parcel_id == parcela_id)
+        sensores = select(Sensor.id).where(col(Sensor.sector_id).in_(sectores))
+        # De las hojas a la raíz, para no dejar filas que apunten a algo borrado
+        s.exec(delete(Alert).where(col(Alert.sensor_id).in_(sensores)))
+        s.exec(delete(SensorData).where(col(SensorData.sensor_id).in_(sensores)))
+        s.exec(delete(Sensor).where(col(Sensor.sector_id).in_(sectores)))
+        s.exec(delete(Sector).where(Sector.parcel_id == parcela_id))
+        s.exec(delete(Action).where(Action.parcel_id == parcela_id))
+        s.exec(delete(ParcelViewer).where(ParcelViewer.parcel_id == parcela_id))
+        s.exec(delete(Parcel).where(Parcel.id == parcela_id))
+        s.commit()
+
+
+# ---------- Sectores y sensores ----------
+
+def listar_sectores(usuario_id: int, parcela_id: int) -> list[Sector]:
+    with sesion() as s:
+        _parcela_visible(s, usuario_id, parcela_id)
+        return list(s.exec(select(Sector).where(Sector.parcel_id == parcela_id).order_by(Sector.id)).all())
+
+
+def dividir_sector(usuario_id: int, sector_id: int, orientacion: str) -> tuple[Sector, Sector]:
+    """Parte un sector por la mitad. El nuevo conserva el cultivo pero empieza sin sensores."""
+    if orientacion not in ("vertical", "horizontal"):
+        raise ValueError("La división debe ser vertical u horizontal.")
+    with sesion() as s:
+        sector, parcela = _sector_editable(s, usuario_id, sector_id)
+        lado = "width_pct" if orientacion == "vertical" else "height_pct"
+        mitad = getattr(sector, lado) / 2
+        if mitad < LADO_MINIMO_PCT:
+            raise ValueError("El sector es demasiado pequeño para dividirlo otra vez.")
+        cuantos = s.exec(select(func.count()).select_from(Sector).where(Sector.parcel_id == parcela.id)).one()
+        nuevo = Sector(
+            parcel_id=parcela.id,
+            name=f"Sector {cuantos + 1}",
+            crop_id=sector.crop_id,
+            left_pct=sector.left_pct + (mitad if orientacion == "vertical" else 0),
+            top_pct=sector.top_pct + (mitad if orientacion == "horizontal" else 0),
+            width_pct=mitad if orientacion == "vertical" else sector.width_pct,
+            height_pct=mitad if orientacion == "horizontal" else sector.height_pct,
+            api_key_hash=hash_api_key(generar_api_key()),
+        )
+        setattr(sector, lado, mitad)
+        s.add_all([sector, nuevo])
+        s.commit()
+        return sector, nuevo
+
+
+def cambiar_cultivo(usuario_id: int, sector_id: int, cultivo_id: Optional[int]) -> Sector:
+    """Asigna un cultivo al sector; None lo deja «sin cultivo»."""
+    with sesion() as s:
+        sector, _ = _sector_editable(s, usuario_id, sector_id)
         if cultivo_id is not None and s.get(Crop, cultivo_id) is None:
             raise ValueError("El cultivo elegido no existe.")
-        clave = generar_api_key()
-        nodo = Node(
-            parcel_id=parcela.id,
-            name=_texto(nombre, "el nombre del aparato"),
-            pos_x_m=float(x_m),
-            pos_y_m=float(y_m),
-            radius_m=radio,
-            crop_id=cultivo_id,
-            api_key_hash=hash_api_key(clave),
-        )
-        s.add(nodo)
+        sector.crop_id = cultivo_id
+        s.add(sector)
         s.commit()
-        return nodo, clave
+        return sector
 
 
-def _nodo_editable(s: Session, usuario_id: int, nodo_id: int) -> tuple[Node, Parcel]:
-    nodo = s.get(Node, nodo_id)
-    if nodo is None:
-        raise ValueError("El aparato no existe.")
-    return nodo, _parcela_editable(s, usuario_id, nodo.parcel_id)
-
-
-def mover_nodo(usuario_id: int, nodo_id: int, x_m: float, y_m: float) -> Node:
+def generar_clave_sector(usuario_id: int, sector_id: int) -> str:
+    """Nueva clave para el aparato del sector. Se muestra una sola vez; la anterior deja de valer."""
     with sesion() as s:
-        nodo, parcela = _nodo_editable(s, usuario_id, nodo_id)
-        _comprobar_posicion(parcela, x_m, y_m)
-        nodo.pos_x_m, nodo.pos_y_m = float(x_m), float(y_m)
-        s.add(nodo)
+        sector, _ = _sector_editable(s, usuario_id, sector_id)
+        clave = generar_api_key()
+        sector.api_key_hash = hash_api_key(clave)
+        s.add(sector)
         s.commit()
-        return nodo
+        return clave
 
 
 def crear_sensor(
     usuario_id: int,
-    nodo_id: int,
+    sector_id: int,
     tipo: str,
     umbral_bajo: Optional[float] = None,
     umbral_alto: Optional[float] = None,
 ) -> Sensor:
     with sesion() as s:
-        nodo, _ = _nodo_editable(s, usuario_id, nodo_id)
+        sector, _ = _sector_editable(s, usuario_id, sector_id)
         if tipo not in TIPOS_MEDIDA:
             raise ValueError(f"Tipo de medida no válido. Opciones: {', '.join(TIPOS_MEDIDA)}.")
+        if s.exec(select(Sensor).where(Sensor.sector_id == sector.id, Sensor.type == tipo)).first():
+            raise ValueError("Ese sector ya tiene este tipo de sensor.")
         unidad, minimo, maximo = TIPOS_MEDIDA[tipo]
         for umbral in (umbral_bajo, umbral_alto):
             if umbral is not None and not minimo <= umbral <= maximo:
                 raise ValueError(f"Los umbrales deben estar entre {minimo:g} y {maximo:g} {unidad}.")
         if umbral_bajo is not None and umbral_alto is not None and umbral_bajo >= umbral_alto:
             raise ValueError("El umbral bajo debe ser menor que el alto.")
-        sensor = Sensor(node_id=nodo.id, type=tipo, unit=unidad, threshold_low=umbral_bajo, threshold_high=umbral_alto)
+        sensor = Sensor(sector_id=sector.id, type=tipo, unit=unidad, threshold_low=umbral_bajo, threshold_high=umbral_alto)
         s.add(sensor)
         s.commit()
         return sensor
@@ -268,26 +294,26 @@ def ultimas_lecturas(usuario_id: int, parcela_id: int) -> list[EstadoSensor]:
     with sesion() as s:
         _parcela_visible(s, usuario_id, parcela_id)
         filas = s.exec(
-            select(Sensor, Node)
-            .join(Node, Sensor.node_id == Node.id)
-            .where(Node.parcel_id == parcela_id, Sensor.active == True)  # noqa: E712 (SQL, no Python)
-            .order_by(Node.id, Sensor.id)
+            select(Sensor, Sector)
+            .join(Sector, Sensor.sector_id == Sector.id)
+            .where(Sector.parcel_id == parcela_id, Sensor.active == True)  # noqa: E712 (SQL, no Python)
+            .order_by(Sector.id, Sensor.id)
         ).all()
         estados = []
-        for sensor, nodo in filas:
+        for sensor, sector in filas:
             ultima = s.exec(
                 select(SensorData)
                 .where(SensorData.sensor_id == sensor.id)
                 .order_by(col(SensorData.timestamp).desc())
                 .limit(1)
             ).first()
-            minimo, maximo = limites_sensor(s, sensor, nodo)
+            minimo, maximo = limites_sensor(s, sensor, sector)
             valor = ultima.value if ultima else None
             estados.append(
                 EstadoSensor(
                     sensor_id=sensor.id,
-                    node_id=nodo.id,
-                    node_name=nodo.name,
+                    sector_id=sector.id,
+                    sector_name=sector.name,
                     type=sensor.type,
                     unit=sensor.unit,
                     value=valor,
@@ -313,7 +339,7 @@ def historico(
         sensor = s.get(Sensor, sensor_id)
         if sensor is None:
             raise ValueError("El sensor no existe.")
-        _parcela_visible(s, usuario_id, s.get(Node, sensor.node_id).parcel_id)
+        _parcela_visible(s, usuario_id, s.get(Sector, sensor.sector_id).parcel_id)
         return list(
             s.exec(
                 select(SensorData)
@@ -350,8 +376,8 @@ def alertas_pendientes(usuario_id: int) -> list[Alert]:
             s.exec(
                 select(Alert)
                 .join(Sensor, Alert.sensor_id == Sensor.id)
-                .join(Node, Sensor.node_id == Node.id)
-                .where(col(Node.parcel_id).in_(ids), Alert.acknowledged == False)  # noqa: E712
+                .join(Sector, Sensor.sector_id == Sector.id)
+                .where(col(Sector.parcel_id).in_(ids), Alert.acknowledged == False)  # noqa: E712
                 .order_by(col(Alert.timestamp).desc())
             ).all()
         )
@@ -362,8 +388,8 @@ def marcar_alerta_leida(usuario_id: int, alerta_id: int) -> None:
         alerta = s.get(Alert, alerta_id)
         if alerta is None:
             raise ValueError("La alerta no existe.")
-        nodo = s.get(Node, s.get(Sensor, alerta.sensor_id).node_id)
-        _parcela_editable(s, usuario_id, nodo.parcel_id)
+        sector = s.get(Sector, s.get(Sensor, alerta.sensor_id).sector_id)
+        _parcela_editable(s, usuario_id, sector.parcel_id)
         alerta.acknowledged = True
         s.add(alerta)
         s.commit()
