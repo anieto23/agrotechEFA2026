@@ -3,12 +3,17 @@
 ## Aplicación y panel
 
 - `agrotechEFA2026/agrotechEFA2026.py` crea la aplicación Reflex y registra la página principal.
-- `agrotechEFA2026/pages/dashboard.py` compone la cabecera, los indicadores y el estado de la parcela.
+- `agrotechEFA2026/pages/dashboard.py` compone el listado de parcelas, el resumen y las vistas de parcela y sector.
+- `agrotechEFA2026/state/dashboard_state.py` mantiene los datos de demostración por sesión, valida el alta temporal, confirma la eliminación de parcelas y sus sectores, divide sectores y calcula medias por magnitud.
+- `agrotechEFA2026/components/parcel_map.py` muestra la forma esquemática de una parcela y permite abrir sus sectores.
 - `agrotechEFA2026/components/sensor_card.py` contiene la tarjeta reutilizable de lectura.
 - `agrotechEFA2026/components/colors.py` centraliza los colores usados por el panel.
 
-El panel sigue siendo una maqueta: las lecturas son fijas y no hay conexión con la API,
-estado dinámico ni gráficos de histórico implementados todavía.
+El panel permite navegar e interactuar con datos ficticios en memoria; no persiste cambios ni
+se conecta a la base de datos. La forma y los sectores aún no están en el contrato compartido.
+La media de cada magnitud incluye los sectores que sí tienen una lectura y excluye los que
+no tienen sensor o dato disponible. El plano es esquemático: el polígono es una forma de
+muestra y los sectores se dividen mediante cortes rectos.
 
 ## Base de datos
 

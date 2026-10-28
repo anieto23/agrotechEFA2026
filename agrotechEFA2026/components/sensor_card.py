@@ -10,6 +10,7 @@ def sensor_card(
     description: str,
     icon: str,
     color: str,
+    badge: str = "Simulado",
 ) -> rx.Component:
     """Tarjeta para mostrar la lectura de un sensor."""
 
@@ -27,7 +28,7 @@ def sensor_card(
                     background=colors.ICON_BACKGROUND,
                 ),
                 rx.spacer(),
-                rx.badge("Simulado", color_scheme="gray"),
+                rx.badge(badge, color_scheme="gray"),
                 width="100%",
                 align="center",
             ),
