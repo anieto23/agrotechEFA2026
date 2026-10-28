@@ -64,6 +64,14 @@ En Windows usa `127.0.0.1` y no `localhost`: con `localhost` cada envío tarda u
 ## Panel de control
 
 La aplicación registra la página principal desde `agrotechEFA2026/agrotechEFA2026.py`.
-La interfaz del panel está en `agrotechEFA2026/pages/dashboard.py`; sus tarjetas
-reutilizables y la paleta de colores están en `agrotechEFA2026/components/`.
-Los valores actuales son datos ficticios para probar la interfaz.
+El panel en `agrotechEFA2026/pages/dashboard.py` permite probar la navegación entre
+parcelas, sectores y mediciones. La maqueta admite crear parcelas con superficie y forma,
+eliminarlas con confirmación, dividir sectores en horizontal o vertical, asignar cultivos y
+añadir sensores. Al eliminar una parcela también se eliminan sus sectores de muestra. Las
+medias ignoran sectores que todavía no tienen lectura para esa magnitud.
+
+Esta parte aún usa datos de ejemplo en memoria: los cambios no se guardan al cerrar la
+sesión. El contrato de base de datos actual no incluye formas de parcela ni sectores; antes
+de conectar la maqueta habrá que acordar y añadir esos datos con A y C. El plano es
+esquemático: el polígono es una forma de muestra y los sectores se subdividen con límites
+rectos, no se dibujan todavía con precisión sobre el terreno.
