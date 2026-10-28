@@ -19,7 +19,8 @@ from sqlmodel import Session, select
 
 from .models import TIPOS_MEDIDA, Crop, Parcel, ParcelViewer, Sector, Sensor, User
 from .seguridad import generar_api_key, hash_api_key, hash_password
-from .session import crear_tablas, obtener_motor
+from .migrar import actualizar_bd
+from .session import obtener_motor
 
 # (nombre, tipo, superficie m², forma, cultivo, umbral bajo de humedad del suelo)
 # Parcelas y umbrales iguales que en scripts/gen_sample_data.py; superficies y formas de ejemplo.
@@ -80,7 +81,7 @@ def _password(variable: str) -> tuple[str, bool]:
 
 def main() -> None:
     motor = obtener_motor()
-    crear_tablas(motor)
+    actualizar_bd(motor)
     with Session(motor) as s:
         if s.exec(select(User)).first():
             print("La base de datos ya tiene datos; no se toca. Borra agrotech.db para empezar de cero.")

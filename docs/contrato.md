@@ -5,6 +5,7 @@
 
 ## Decisiones
 - **Motor:** SQLite en desarrollo (`sqlite:///agrotech.db`, git ya lo ignora). Para publicar se puede pasar a MySQL/MariaDB cambiando `db_url`, sin tocar el código.
+- **Migraciones:** cada cambio de tablas va con su migración en `migrations/versions/` (`python -m agrotechEFA2026.db.migrar nueva "..."`), en el mismo PR que el cambio de `db/models.py`.
 - **Librería:** **SQLModel directamente** (`SQLModel`, `create_engine`, `Session`), como recomienda la documentación de Reflex 0.10 para apps nuevas (`rx.Model` queda como forma antigua). Se instala con `reflex[db]`, que trae SQLModel y Alembic para las migraciones.
 - **Nombres:** tablas, columnas y JSON **en inglés**, como las bases y el simulador. El código Python (funciones, variables, comentarios) **en español**, como el resto del repo.
 - **Fechas:** ISO 8601. Se guardan **en UTC**. Si una fecha llega sin zona horaria (`2026-10-26T12:00:00`), se entiende como **UTC** (el simulador ya manda la zona; un ESP32 con NTP da UTC). Una lectura sin `timestamp` toma la hora del servidor, y una con más de 5 minutos en el futuro se rechaza (`422`).
