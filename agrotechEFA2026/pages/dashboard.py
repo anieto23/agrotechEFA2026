@@ -3,7 +3,12 @@ import reflex as rx
 from ..components import colors
 from ..components.parcel_map import parcela_map
 from ..components.sensor_card import sensor_card
-from ..state.dashboard_state import CULTIVOS, SENSORES, DashboardState
+from ..state.dashboard_state import (
+    CULTIVOS,
+    PUNTOS_CUADRICULA,
+    SENSORES,
+    DashboardState,
+)
 
 
 def cabecera() -> rx.Component:
@@ -102,6 +107,127 @@ def tarjeta_parcela(parcela: dict[str, rx.Var]) -> rx.Component:
     )
 
 
+def punto_contorno(punto: dict[str, rx.Var]) -> rx.Component:
+    return rx.box(
+        position="absolute",
+        left=punto["x"] + "%",
+        top=punto["y"] + "%",
+        transform="translate(-50%, -50%)",
+        width="10px",
+        height="10px",
+        border_radius="50%",
+        background="#E7B85C",
+        border="2px solid #202020",
+        pointer_events="none",
+    )
+
+
+def formulario_dibujo() -> rx.Component:
+    celdas = [
+        rx.button(
+            on_click=DashboardState.agregar_vertice(x, y),
+            aria_label=f"Añadir vértice en {x}%, {y}%",
+            width="100%",
+            height="100%",
+            min_height="40px",
+            padding="0",
+            border="1px dashed #646464",
+            border_radius="0",
+            background="transparent",
+            _hover={"background": "#3D5A43"},
+        )
+        for y in PUNTOS_CUADRICULA
+        for x in PUNTOS_CUADRICULA
+    ]
+
+    return rx.vstack(
+        rx.text(
+            "Toca la cuadrícula para marcar los vértices del contorno.",
+            color=colors.TEXT,
+            size="2",
+        ),
+        rx.box(
+            rx.grid(
+                *celdas,
+                columns="repeat(7, minmax(0, 1fr))",
+                rows="repeat(7, minmax(0, 1fr))",
+                width="100%",
+                height="100%",
+            ),
+            rx.cond(
+                DashboardState.vertices_nueva_parcela.length() >= 3,
+                rx.box(
+                    position="absolute",
+                    top="0",
+                    right="0",
+                    bottom="0",
+                    left="0",
+                    background="#3D5A43",
+                    opacity="0.6",
+                    clip_path=DashboardState.contorno_previsualizacion,
+                    pointer_events="none",
+                ),
+                rx.fragment(),
+            ),
+            rx.foreach(DashboardState.vertices_nueva_parcela, punto_contorno),
+            position="relative",
+            width="100%",
+            max_width="480px",
+            aspect_ratio="1 / 1",
+            overflow="hidden",
+            border="1px solid #747474",
+            border_radius="8px",
+            role="group",
+            aria_label="Cuadrícula para dibujar el contorno de la parcela",
+        ),
+        rx.text(
+            "Vértices marcados: ",
+            DashboardState.vertices_nueva_parcela.length(),
+            color=colors.TEXT,
+            size="2",
+        ),
+        rx.cond(
+            DashboardState.contorno_cerrado,
+            rx.badge("Contorno cerrado", color_scheme="green"),
+            rx.badge("Contorno en edición", color_scheme="gray"),
+        ),
+        rx.hstack(
+            rx.cond(
+                DashboardState.contorno_cerrado,
+                rx.button(
+                    "Volver a editar",
+                    on_click=DashboardState.reabrir_contorno,
+                    variant="soft",
+                ),
+                rx.button(
+                    "Cerrar contorno",
+                    on_click=DashboardState.cerrar_contorno,
+                    color_scheme="green",
+                    variant="soft",
+                    disabled=DashboardState.vertices_nueva_parcela.length() < 3,
+                ),
+            ),
+            rx.button(
+                "Deshacer último",
+                on_click=DashboardState.deshacer_vertice,
+                variant="soft",
+                disabled=DashboardState.vertices_nueva_parcela.length() == 0,
+            ),
+            rx.button(
+                "Borrar puntos",
+                on_click=DashboardState.limpiar_contorno,
+                variant="soft",
+                disabled=DashboardState.vertices_nueva_parcela.length() == 0,
+            ),
+            width="100%",
+            wrap="wrap",
+        ),
+        spacing="2",
+        align="start",
+        width="100%",
+    )
+
+
 def formulario_parcela() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -131,11 +257,16 @@ def formulario_parcela() -> rx.Component:
                 aria_label="Superficie de la parcela en metros cuadrados",
             ),
             rx.select(
-                ["Rectángulo", "Cuadrado", "Círculo", "Polígono"],
+                ["Rectángulo", "Cuadrado", "Círculo", "Polígono", "Dibujada"],
                 value=DashboardState.nueva_forma,
                 on_change=DashboardState.actualizar_forma,
                 width="100%",
                 aria_label="Forma de la parcela",
+            ),
+            rx.cond(
+                DashboardState.nueva_forma == "Dibujada",
+                formulario_dibujo(),
+                rx.fragment(),
             ),
             rx.cond(
                 DashboardState.error_formulario != "",

@@ -2,9 +2,59 @@ import pytest
 
 from agrotechEFA2026.state.dashboard_state import (
     calcular_medias,
+    construir_contorno,
     dividir_sector,
     eliminar_parcela_de_datos,
 )
+
+
+def test_construir_contorno_convierte_vertices_a_poligono_css():
+    vertices = [
+        {"x": 10, "y": 10},
+        {"x": 80, "y": 10},
+        {"x": 60, "y": 80},
+        {"x": 20, "y": 60},
+    ]
+
+    assert construir_contorno(vertices) == (
+        "polygon(10% 10%, 80% 10%, 60% 80%, 20% 60%)"
+    )
+
+
+@pytest.mark.parametrize(
+    ("vertices", "error"),
+    [
+        ([{"x": 10, "y": 10}, {"x": 80, "y": 10}], "al menos tres"),
+        (
+            [{"x": 10, "y": 10}, {"x": 80, "y": 10}, {"x": 10, "y": 10}],
+            "repetir vértices",
+        ),
+        (
+            [{"x": 10, "y": 10}, {"x": 80, "y": 10}, {"x": 110, "y": 80}],
+            "dentro de la cuadrícula",
+        ),
+        (
+            [{"x": 10, "y": 10}, {"x": 50, "y": 50}, {"x": 90, "y": 90}],
+            "formar una superficie",
+        ),
+    ],
+)
+def test_construir_contorno_rechaza_formas_invalidas(vertices, error):
+    with pytest.raises(ValueError, match=error):
+        construir_contorno(vertices)
+
+
+def test_construir_contorno_rechaza_lados_que_se_cruzan():
+    vertices = [
+        {"x": 10, "y": 10},
+        {"x": 80, "y": 80},
+        {"x": 10, "y": 80},
+        {"x": 80, "y": 20},
+        {"x": 90, "y": 90},
+    ]
+
+    with pytest.raises(ValueError, match="cruzarse"):
+        construir_contorno(vertices)
 
 
 def test_calcula_media_de_sectores_con_lectura_y_omite_los_sin_datos():
