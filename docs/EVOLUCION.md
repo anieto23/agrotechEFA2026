@@ -9,6 +9,9 @@ Registro de cómo ha ido creciendo el proyecto, como piden las bases del reto. L
 - **efapro (A, datos):** la base de datos se adapta al panel de B: la parcela guarda superficie, forma e interior/exterior, y se divide en sectores con su cultivo y sus sensores. Nuevas funciones para el panel: listar, dividir y cambiar el cultivo de un sector, borrar una parcela con todo lo suyo y generar la clave del aparato de un sector. 77 tests. (PR #12)
 - **anieto23 (B, panel):** maqueta del panel con varias parcelas, formas y sectores que se dividen, con cultivo y sensores por sector. (PR #11)
 
+## 28-oct-2026 (D)
+- **mhjosemi (D, sensores):** bot de Telegram conectado a la base de datos: contesta cómo va cada parcela (estado, riego, alertas) y avisa solo cuando salta una alerta nueva. Solo habla con el chat del `.env`.
+
 ## 27-oct-2026
 - **mhjosemi (D, sensores):** recomendación de riego (`services/riego.py`, reglas por cultivo y previsión de Open-Meteo con caché), avisos por Telegram con máximo 1 cada 30 min (`services/telegram.py`), exportar CSV e informe PDF (`services/export.py`), firmware MicroPython del ESP32 y ESP32 virtual como plan B, `docs/hardware.md` y `Dockerfile`. Cifras de cultivos pendientes de validar con el profesorado agrario.
 

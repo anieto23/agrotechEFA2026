@@ -9,6 +9,7 @@ Todo probado con la base de datos nueva (sectores). 112 tests en verde.
 | D2 plan B | `scripts/esp32_virtual.py` | Hecho. Se comporta como el firmware, con corte de WiFi simulado (`--corte 3`) |
 | D3 Riego | `agrotechEFA2026/services/riego.py`, `data/cultivos.json` | Hecho. Cifras de cultivos **pendientes de validar** con el profesorado agrario |
 | D4 Telegram | `agrotechEFA2026/services/telegram.py` | Hecho. Token y chat id en `.env` (nunca en git) |
+| D4 Bot | `agrotechEFA2026/services/bot.py` | Hecho. Responde «¿cómo va mi parcela?» (/estado, /riego, /alertas, /parcelas) y avisa solo de las alertas nuevas. Arranque: `python -m agrotechEFA2026.services.bot` |
 | D5 Exportar | `agrotechEFA2026/services/export.py` | CSV y PDF hechos. **Falta el botón** en el panel |
 | D5 Despliegue | `Dockerfile` | Escrito, **sin probar** |
 
