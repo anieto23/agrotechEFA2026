@@ -9,7 +9,7 @@ el resto del código en español.
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import JSON, Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 # Tipo de medida -> (unidad, mínimo válido, máximo válido). Mismos valores que el simulador.
@@ -22,7 +22,8 @@ TIPOS_MEDIDA = {
 
 ROLES = ("farmer", "technician")
 TIPOS_PARCELA = ("indoor", "outdoor")
-FORMAS_PARCELA = ("rectangle", "square", "circle", "polygon")
+# «drawn»: contorno dibujado por el usuario, guardado en Parcel.outline
+FORMAS_PARCELA = ("rectangle", "square", "circle", "polygon", "drawn")
 
 # En exterior no se puede ventilar, calentar ni nebulizar: solo regar y sombrear.
 ACCIONES_POR_TIPO = {
@@ -55,6 +56,8 @@ class Parcel(SQLModel, table=True):
     kind: str = "outdoor"
     area_m2: float
     shape: str = "rectangle"
+    # Solo si shape es «drawn»: vértices [[x, y], ...] en % del plano (0-100), como los dibuja el panel
+    outline: Optional[list[list[float]]] = Field(default=None, sa_type=JSON)
     location: Optional[str] = None
     lat: Optional[float] = None
     lon: Optional[float] = None

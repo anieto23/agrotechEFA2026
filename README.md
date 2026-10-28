@@ -35,7 +35,7 @@ Muestra las contraseñas de `agricultor` y `tecnico` si no están en `AGROTECH_P
 el simulador (`--claves claves_demo.json`).
 
 Cada parcela se divide en **sectores** (zonas con su cultivo y como mucho un sensor de cada
-tipo).
+tipo). Si se dibuja a mano, guarda también su contorno.
 
 ### Migraciones (cambiar las tablas sin perder datos)
 
@@ -89,7 +89,7 @@ sensores. Al eliminar una parcela también se eliminan sus sectores de muestra. 
 ignoran sectores que todavía no tienen lectura para esa magnitud.
 
 Esta parte aún usa datos de ejemplo en memoria: los cambios no se guardan al cerrar la
-sesión. El contrato de base de datos actual no incluye formas de parcela ni sectores; antes
-de conectar la maqueta habrá que acordar y añadir esos datos con A y C. El contorno dibujado
+sesión. La base de datos ya guarda formas, contornos dibujados y sectores (ver
+[`docs/contrato.md`](docs/contrato.md)); falta conectar la maqueta a esas funciones. El contorno dibujado
 se guarda como proporciones de la cuadrícula, no representa coordenadas reales ni está a
 escala. El plano es esquemático y los sectores se subdividen con límites rectos.

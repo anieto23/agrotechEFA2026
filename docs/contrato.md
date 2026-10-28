@@ -27,7 +27,7 @@ Lo que llega fuera del rango válido se rechaza con `422`.
 
 **users**: `username` (str, único) · `password_hash` (str, nunca en claro) · `role` (`farmer` agricultor | `technician` técnico, que solo lee) · `created_at` (datetime).
 
-**parcels**: `owner_id` (FK users) · `name` (str) · `kind` (`indoor` invernadero | `outdoor` campo) · `area_m2` (float > 0) · `shape` (`rectangle` | `square` | `circle` | `polygon`) · `location` (str, opcional) · `lat`, `lon` (float, opcionales) · `created_at`.
+**parcels**: `owner_id` (FK users) · `name` (str) · `kind` (`indoor` invernadero | `outdoor` campo) · `area_m2` (float > 0) · `shape` (`rectangle` | `square` | `circle` | `polygon` | `drawn` dibujada) · `outline` (JSON, solo si es `drawn`: vértices `[[x, y], ...]` en % del plano, 0-100) · `location` (str, opcional) · `lat`, `lon` (float, opcionales) · `created_at`.
 
 **parcel_viewers**: `parcel_id` (FK parcels) · `user_id` (FK users). Dice qué técnicos pueden ver una parcela que no es suya.
 
@@ -105,7 +105,8 @@ La interfaz de Reflex llama a estas funciones directamente (no pasa por la API).
 # db/consultas.py
 listar_parcelas(usuario_id: int) -> list[Parcel]
 obtener_parcela(usuario_id: int, parcela_id: int) -> Parcel | None
-crear_parcela(usuario_id: int, nombre: str, tipo: str, area_m2: float, forma: str) -> Parcel   # crea también su «Sector 1»
+crear_parcela(usuario_id: int, nombre: str, tipo: str, area_m2: float, forma: str, contorno: list | None = None) -> Parcel   # crea también su «Sector 1»; contorno solo con forma "drawn"
+validar_contorno(vertices) -> list[list[float]]   # sin base de datos: mínimo 3 vértices, dentro del plano, sin repetir ni cruzarse
 eliminar_parcela(usuario_id: int, parcela_id: int) -> None   # borra sectores, sensores, lecturas, alertas y acciones
 listar_sectores(usuario_id: int, parcela_id: int) -> list[Sector]
 dividir_sector(usuario_id: int, sector_id: int, orientacion: str) -> tuple[Sector, Sector]   # "vertical" | "horizontal"; (el de antes, el nuevo)
@@ -132,7 +133,7 @@ except (ValueError, PermissionError) as error:
 ```
 `EstadoSensor` y `CultivoConRangos` usan los mismos nombres de campo que el JSON de la API. En `historico`, una fecha sin zona horaria se entiende como UTC. Solo el agricultor dueño puede crear, dividir, borrar, marcar alertas o dar órdenes; el técnico solo lee.
 
-**Para el panel de B:** las formas se guardan en inglés (`rectangle`, `square`, `circle`, `polygon`) y el panel muestra su etiqueta («Rectángulo»…). El cultivo es `crop_id` (de `listar_cultivos()`); «Sin cultivo» es `None`. El formulario de parcela tiene que pedir también **interior o exterior**: decide qué acciones de control se ofrecen.
+**Para el panel de B:** las formas se guardan en inglés (`rectangle`, `square`, `circle`, `polygon`, `drawn`) y el panel muestra su etiqueta («Rectángulo»…). El cultivo es `crop_id` (de `listar_cultivos()`); «Sin cultivo» es `None`. El formulario de parcela tiene que pedir también **interior o exterior**: decide qué acciones de control se ofrecen. La forma «Dibujada» es `drawn` y su contorno se pasa como lista de vértices (`[[7, 7], [50, 7], [50, 50]]`), no como el texto `polygon(...)` de CSS; `validar_contorno` hace las mismas comprobaciones que `construir_contorno` del panel.
 
 ## Datos de ejemplo (`db/seed.py`)
 - 2 usuarios: un agricultor y un técnico (contraseñas de prueba en `.env.example`, guardadas con hash).
