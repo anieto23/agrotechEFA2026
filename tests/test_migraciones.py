@@ -1,6 +1,7 @@
 import shutil
 
 import pytest
+from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
@@ -16,6 +17,11 @@ from agrotechEFA2026.db.models import SensorData, ahora_utc
 def motor(tmp_path):
     # Archivo de verdad (no en memoria), como agrotech.db
     return create_engine(f"sqlite:///{tmp_path / 'prueba.db'}")
+
+
+def _cabeza(motor) -> str:
+    """La última receta (la revisión a la que llega una base al día)."""
+    return ScriptDirectory.from_config(configuracion(motor)).get_current_head()
 
 
 def test_las_migraciones_crean_lo_mismo_que_models(motor):
@@ -46,23 +52,29 @@ def test_actualizar_dos_veces_no_pierde_datos(motor):
 
 
 def test_adopta_una_base_creada_antes_de_las_migraciones(motor):
-    # Así estaban las agrotech.db del equipo: tablas creadas con create_all y sin alembic_version
-    SQLModel.metadata.create_all(motor)
-    with Session(motor) as s:
-        seed.sembrar(s, {"farmer": "a", "technician": "b"})
+    # Así estaban las agrotech.db del equipo: las tablas de la 0001, creadas con create_all
+    # y sin alembic_version
+    cfg = configuracion(motor)
+    with motor.begin() as conexion:
+        cfg.attributes["connection"] = conexion
+        command.upgrade(cfg, migrar.PRIMERA_REVISION)
+        conexion.execute(text("drop table alembic_version"))
+        conexion.execute(text("insert into users (username, password_hash, role, created_at) "
+                              "values ('ana', 'x', 'farmer', '2026-10-28')"))
     actualizar_bd(motor)
     with motor.connect() as conexion:
-        assert conexion.execute(text("select version_num from alembic_version")).scalar() == "0001"
-        assert conexion.execute(text("select count(*) from sensors")).scalar() == 12  # datos intactos
+        assert conexion.execute(text("select version_num from alembic_version")).scalar() == _cabeza(motor)
+        assert conexion.execute(text("select username from users")).scalar() == "ana"  # datos intactos
 
 
 def test_unir_dos_migraciones_creadas_a_la_vez(motor, tmp_path, monkeypatch):
-    # Copia de las recetas con dos «0002» hechas por dos personas a la vez
+    # Copia de las recetas con dos nuevas hechas por dos personas a la vez
     carpeta = tmp_path / "migrations"
     shutil.copytree(migrar.CARPETA, carpeta, ignore=shutil.ignore_patterns("__pycache__"))
-    for rev in ("0002a", "0002b"):
+    cabeza = _cabeza(motor)
+    for rev in ("nueva_a", "nueva_b"):
         (carpeta / "versions" / f"{rev}_prueba.py").write_text(
-            f'revision = "{rev}"\ndown_revision = "0001"\nbranch_labels = None\ndepends_on = None\n\n\n'
+            f'revision = "{rev}"\ndown_revision = "{cabeza}"\nbranch_labels = None\ndepends_on = None\n\n\n'
             "def upgrade():\n    pass\n\n\ndef downgrade():\n    pass\n",
             encoding="utf-8",
         )

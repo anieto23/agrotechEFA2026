@@ -102,6 +102,45 @@ def test_crear_parcela_con_datos_malos(motor, nombre, tipo, area, forma):
         c.crear_parcela(AGRICULTOR, nombre, tipo, area, forma)
 
 
+CUADRADO = [[10, 10], [90, 10], [90, 90], [10, 90]]
+
+
+def test_crear_parcela_dibujada_guarda_su_contorno(motor):
+    p = c.crear_parcela(AGRICULTOR, "Bancal", "outdoor", 300, "drawn", CUADRADO)
+    assert c.obtener_parcela(AGRICULTOR, p.id).outline == CUADRADO
+    assert c.crear_parcela(AGRICULTOR, "Otra", "outdoor", 300, "square").outline is None
+
+
+@pytest.mark.parametrize(
+    "contorno, motivo",
+    [
+        (None, "tres vértices"),
+        ([[0, 0], [50, 0]], "tres vértices"),
+        ([[0, 0], [150, 0], [0, 50]], "dentro del plano"),
+        ([[0, 0], [50, 0], [0, 0], [0, 50]], "repetir"),
+        ([[0, 0], [50, 50], [100, 100]], "superficie"),
+        ([[0, 0], [100, 100], [100, 0], [0, 60]], "cruzarse"),  # pajarita
+        ([[0, 0], [50, 0], [50, 50], [25, 0], [0, 50]], "cruzarse"),  # un vértice toca otro lado
+        ([["a", 0], [50, 0], [0, 50]], "par de números"),
+        ([[0, 0, 0], [50, 0], [0, 50]], "par de números"),
+    ],
+)
+def test_contorno_no_valido(motor, contorno, motivo):
+    with pytest.raises(ValueError, match=motivo):
+        c.crear_parcela(AGRICULTOR, "Bancal", "outdoor", 300, "drawn", contorno)
+
+
+def test_contorno_solo_en_parcelas_dibujadas(motor):
+    with pytest.raises(ValueError, match="dibujada"):
+        c.crear_parcela(AGRICULTOR, "Bancal", "outdoor", 300, "square", CUADRADO)
+
+
+def test_contorno_concavo_es_valido():
+    # Forma de L: tiene un entrante, pero no se cruza
+    contorno = [[0, 0], [60, 0], [60, 40], [30, 40], [30, 100], [0, 100]]
+    assert c.validar_contorno(contorno) == contorno
+
+
 def test_tecnico_no_crea_parcelas(motor):
     with pytest.raises(PermissionError):
         c.crear_parcela(TECNICO, "X", "indoor", 10, "square")

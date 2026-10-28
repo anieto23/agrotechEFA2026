@@ -30,6 +30,7 @@ from .models import (
 from .seguridad import generar_api_key, hash_api_key
 from .session import sesion
 
+CONTORNO_MAX_VERTICES = 100
 AREA_MAXIMA_M2 = 10_000_000.0  # 1000 ha: más grande ya no es una parcela, es un error al teclear
 LADO_MINIMO_PCT = 2.0  # por debajo, el sector ya no se ve ni se puede pulsar en el plano
 LIMITE_HISTORICO = 5000
@@ -72,6 +73,51 @@ def evaluar_estado(valor: Optional[float], minimo: Optional[float], maximo: Opti
     if maximo is not None and valor > maximo:
         return "high"
     return "ok"
+
+
+def _orientacion(a, b, c) -> float:
+    # > 0 si c queda a la izquierda de a→b, < 0 a la derecha, 0 si están en línea
+    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+
+def _se_tocan(a, b, c, d) -> bool:
+    """Si los segmentos a-b y c-d se cruzan o se tocan."""
+    o1, o2, o3, o4 = _orientacion(a, b, c), _orientacion(a, b, d), _orientacion(c, d, a), _orientacion(c, d, b)
+    if o1 * o2 < 0 and o3 * o4 < 0:
+        return True
+
+    def sobre(p, q, r):  # r, en línea con p-q, cae dentro del segmento
+        return min(p[0], q[0]) <= r[0] <= max(p[0], q[0]) and min(p[1], q[1]) <= r[1] <= max(p[1], q[1])
+
+    return (o1 == 0 and sobre(a, b, c)) or (o2 == 0 and sobre(a, b, d)) or (
+        o3 == 0 and sobre(c, d, a)) or (o4 == 0 and sobre(c, d, b))
+
+
+def validar_contorno(vertices) -> list[list[float]]:
+    """Comprueba un contorno dibujado ([[x, y], ...] en % del plano) y lo devuelve listo para guardar."""
+    try:
+        puntos = [(float(x), float(y)) for x, y in vertices or []]
+    except (TypeError, ValueError):
+        raise ValueError("Cada vértice tiene que ser un par de números (x, y).") from None
+    if len(puntos) < 3:
+        raise ValueError("Añade al menos tres vértices para cerrar el contorno.")
+    if len(puntos) > CONTORNO_MAX_VERTICES:
+        raise ValueError(f"El contorno no puede tener más de {CONTORNO_MAX_VERTICES} vértices.")
+    if any(not (0 <= x <= 100 and 0 <= y <= 100) for x, y in puntos):
+        raise ValueError("Los vértices deben estar dentro del plano (0 a 100 %).")
+    if len(set(puntos)) != len(puntos):
+        raise ValueError("El contorno no puede repetir vértices.")
+    lados = list(zip(puntos, puntos[1:] + puntos[:1]))
+    if sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in lados) == 0:
+        raise ValueError("Los vértices deben formar una superficie.")
+    # Los lados vecinos comparten un vértice; solo se miran los que no se tocan por los extremos
+    for i in range(len(lados)):
+        for j in range(i + 2, len(lados)):
+            if i == 0 and j == len(lados) - 1:
+                continue
+            if _se_tocan(*lados[i], *lados[j]):
+                raise ValueError("El contorno no puede cruzarse a sí mismo.")
+    return [[x, y] for x, y in puntos]
 
 
 def _en_utc(fecha: datetime) -> datetime:
@@ -165,8 +211,13 @@ def obtener_parcela(usuario_id: int, parcela_id: int) -> Optional[Parcel]:
             return None
 
 
-def crear_parcela(usuario_id: int, nombre: str, tipo: str, area_m2: float, forma: str) -> Parcel:
-    """Crea la parcela con un primer sector que la ocupa entera, como hace el panel."""
+def crear_parcela(
+    usuario_id: int, nombre: str, tipo: str, area_m2: float, forma: str, contorno: Optional[list] = None
+) -> Parcel:
+    """Crea la parcela con un primer sector que la ocupa entera, como hace el panel.
+
+    `contorno` ([[x, y], ...] en % del plano) es obligatorio si la forma es «drawn» y no se usa con las demás.
+    """
     with sesion() as s:
         usuario = _usuario(s, usuario_id)
         if usuario.role != "farmer":
@@ -177,8 +228,17 @@ def crear_parcela(usuario_id: int, nombre: str, tipo: str, area_m2: float, forma
             raise ValueError("Selecciona una forma válida.")
         if not 0 < area_m2 <= AREA_MAXIMA_M2:
             raise ValueError(f"La superficie debe estar entre 0 y {AREA_MAXIMA_M2:,.0f} m².".replace(",", "."))
+        if forma == "drawn":
+            contorno = validar_contorno(contorno)
+        elif contorno is not None:
+            raise ValueError("Solo una parcela dibujada lleva contorno.")
         parcela = Parcel(
-            owner_id=usuario.id, name=_texto(nombre, "el nombre"), kind=tipo, area_m2=float(area_m2), shape=forma
+            owner_id=usuario.id,
+            name=_texto(nombre, "el nombre"),
+            kind=tipo,
+            area_m2=float(area_m2),
+            shape=forma,
+            outline=contorno,
         )
         s.add(parcela)
         s.flush()  # para tener el id de la parcela
