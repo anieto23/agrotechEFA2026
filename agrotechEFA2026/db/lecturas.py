@@ -10,7 +10,7 @@ from typing import Optional
 from sqlmodel import Session, select
 
 from .consultas import evaluar_estado, limites_sensor
-from .models import TIPOS_MEDIDA, Alert, Node, Sensor, SensorData
+from .models import TIPOS_MEDIDA, Alert, Sector, Sensor, SensorData
 from .seguridad import hash_api_key
 from .session import sesion
 
@@ -25,7 +25,7 @@ MARGEN_FUTURO = timedelta(minutes=5)
 
 
 class ClaveIncorrecta(Exception):
-    """La clave del aparato no es la del nodo del sensor (HTTP 401)."""
+    """La clave del aparato no es la del sector del sensor (HTTP 401)."""
 
 
 class NoEncontrado(Exception):
@@ -47,9 +47,9 @@ def _mensaje_alerta(sensor: Sensor, valor: float, minimo: Optional[float], maxim
     return f"{nombre} {valor:g} {sensor.unit}, por encima de lo recomendado ({limite} {sensor.unit})"
 
 
-def _alerta_si_hace_falta(s: Session, sensor: Sensor, nodo: Node, lectura: SensorData) -> Optional[Alert]:
+def _alerta_si_hace_falta(s: Session, sensor: Sensor, sector: Sector, lectura: SensorData) -> Optional[Alert]:
     """Crea una alerta si la lectura sale del rango, salvo que ya haya una igual sin leer."""
-    minimo, maximo = limites_sensor(s, sensor, nodo)
+    minimo, maximo = limites_sensor(s, sensor, sector)
     estado = evaluar_estado(lectura.value, minimo, maximo)
     if estado not in ("low", "high"):
         return None
@@ -80,10 +80,10 @@ def guardar_lectura(
     """Valida y guarda una lectura. `tipo` y `unidad`, si llegan, deben coincidir con el sensor."""
     with sesion() as s:
         sensor = s.get(Sensor, sensor_id)
-        nodo = s.get(Node, sensor.node_id) if sensor else None
-        if sensor is None or not sensor.active or not nodo.active:
+        sector = s.get(Sector, sensor.sector_id) if sensor else None
+        if sensor is None or not sensor.active or not sector.active:
             raise NoEncontrado("El sensor no existe o está desactivado.")
-        if not clave or hash_api_key(clave) != nodo.api_key_hash:
+        if not clave or hash_api_key(clave) != sector.api_key_hash:
             raise ClaveIncorrecta("Clave del aparato incorrecta.")
 
         if tipo is not None and tipo != sensor.type:
@@ -104,6 +104,6 @@ def guardar_lectura(
 
         lectura = SensorData(sensor_id=sensor.id, timestamp=timestamp.astimezone(timezone.utc), value=float(valor))
         s.add(lectura)
-        alerta = _alerta_si_hace_falta(s, sensor, nodo, lectura)
+        alerta = _alerta_si_hace_falta(s, sensor, sector, lectura)
         s.commit()
         return Resultado(lectura, alerta)

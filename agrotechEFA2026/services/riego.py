@@ -17,7 +17,7 @@ import requests
 from sqlmodel import select
 
 from ..db import consultas
-from ..db.models import Crop, Node
+from ..db.models import Crop, Sector
 from ..db.session import sesion
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -79,12 +79,12 @@ def decidir(humedad: Optional[float], cultivo: dict, prevision: Optional[dict]) 
 
 
 def _cultivo_y_sensores(usuario_id: int, parcela_id: int) -> tuple[Optional[str], list[int]]:
-    """Cultivo del primer nodo con cultivo y ids de sus sensores de humedad del suelo."""
+    """Cultivo del primer sector con cultivo y ids de sus sensores de humedad del suelo."""
     estados = consultas.ultimas_lecturas(usuario_id, parcela_id)  # comprueba permisos
     suelo = [e.sensor_id for e in estados if e.type == "soil_moisture"]
     with sesion() as s:
         nombre = s.exec(
-            select(Crop.name).join(Node, Node.crop_id == Crop.id).where(Node.parcel_id == parcela_id)
+            select(Crop.name).join(Sector, Sector.crop_id == Crop.id).where(Sector.parcel_id == parcela_id)
         ).first()
     return nombre, suelo
 

@@ -34,6 +34,22 @@ Muestra las contraseñas de `agricultor` y `tecnico` si no están en `AGROTECH_P
 `AGROTECH_PASS_TECHNICIAN`, y guarda las claves de los aparatos en `claves_demo.json` para
 el simulador (`--claves claves_demo.json`).
 
+Cada parcela se divide en **sectores** (zonas con su cultivo y como mucho un sensor de cada
+tipo). Si se dibuja a mano, guarda también su contorno.
+
+### Migraciones (cambiar las tablas sin perder datos)
+
+Los cambios de tablas se guardan como «recetas» en `migrations/versions/` (Alembic). La app
+aplica las que falten al arrancar; también se puede hacer a mano:
+
+```bash
+python -m agrotechEFA2026.db.migrar                          # poner agrotech.db al día
+python -m agrotechEFA2026.db.migrar nueva "añade X a Y"      # tras cambiar db/models.py
+python -m agrotechEFA2026.db.migrar unir                     # si dos personas crearon una a la vez
+```
+
+Quien cambie `db/models.py` sube también su migración (los tests fallan si falta).
+
 ## API REST
 
 La API (FastAPI) va dentro de la app de Reflex, en el puerto 8000. Con la app en marcha, la
@@ -64,6 +80,16 @@ En Windows usa `127.0.0.1` y no `localhost`: con `localhost` cada envío tarda u
 ## Panel de control
 
 La aplicación registra la página principal desde `agrotechEFA2026/agrotechEFA2026.py`.
-La interfaz del panel está en `agrotechEFA2026/pages/dashboard.py`; sus tarjetas
-reutilizables y la paleta de colores están en `agrotechEFA2026/components/`.
-Los valores actuales son datos ficticios para probar la interfaz.
+El panel en `agrotechEFA2026/pages/dashboard.py` permite probar la navegación entre
+parcelas, sectores y mediciones. La maqueta admite crear parcelas con superficie y forma predefinida, o dibujar un contorno
+marcando vértices en una cuadrícula. El dibujo permite deshacer el último punto y borrar los
+puntos y cerrar el contorno; no admite lados cruzados. También permite eliminar parcelas
+con confirmación, dividir sectores en horizontal o vertical, asignar cultivos y añadir
+sensores. Al eliminar una parcela también se eliminan sus sectores de muestra. Las medias
+ignoran sectores que todavía no tienen lectura para esa magnitud.
+
+Esta parte aún usa datos de ejemplo en memoria: los cambios no se guardan al cerrar la
+sesión. La base de datos ya guarda formas, contornos dibujados y sectores (ver
+[`docs/contrato.md`](docs/contrato.md)); falta conectar la maqueta a esas funciones. El contorno dibujado
+se guarda como proporciones de la cuadrícula, no representa coordenadas reales ni está a
+escala. El plano es esquemático y los sectores se subdividen con límites rectos.

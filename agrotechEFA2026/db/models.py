@@ -9,7 +9,7 @@ el resto del código en español.
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import JSON, Index, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 # Tipo de medida -> (unidad, mínimo válido, máximo válido). Mismos valores que el simulador.
@@ -22,6 +22,8 @@ TIPOS_MEDIDA = {
 
 ROLES = ("farmer", "technician")
 TIPOS_PARCELA = ("indoor", "outdoor")
+# «drawn»: contorno dibujado por el usuario, guardado en Parcel.outline
+FORMAS_PARCELA = ("rectangle", "square", "circle", "polygon", "drawn")
 
 # En exterior no se puede ventilar, calentar ni nebulizar: solo regar y sombrear.
 ACCIONES_POR_TIPO = {
@@ -52,14 +54,16 @@ class Parcel(SQLModel, table=True):
     owner_id: int = Field(foreign_key="users.id", index=True)
     name: str
     kind: str = "outdoor"
-    width_m: float
-    length_m: float
+    area_m2: float
+    shape: str = "rectangle"
+    # Solo si shape es «drawn»: vértices [[x, y], ...] en % del plano (0-100), como los dibuja el panel
+    outline: Optional[list[list[float]]] = Field(default=None, sa_type=JSON)
     location: Optional[str] = None
     lat: Optional[float] = None
     lon: Optional[float] = None
     created_at: datetime = Field(default_factory=ahora_utc)
 
-    nodes: list["Node"] = Relationship(back_populates="parcel")
+    sectors: list["Sector"] = Relationship(back_populates="parcel")
 
 
 class ParcelViewer(SQLModel, table=True):
@@ -97,40 +101,45 @@ class CropRange(SQLModel, table=True):
     crop: Optional[Crop] = Relationship(back_populates="ranges")
 
 
-class Node(SQLModel, table=True):
-    """Aparato colocado en el plano de la parcela; agrupa varios sensores."""
+class Sector(SQLModel, table=True):
+    """Zona rectangular de una parcela con un cultivo y, como mucho, un sensor de cada tipo.
 
-    __tablename__ = "nodes"
+    La posición va en % del plano de la parcela (0-100), como la dibuja el panel.
+    Sus sensores comparten una clave: la del aparato (p. ej. un ESP32) que mide ese sector.
+    """
+
+    __tablename__ = "sectors"
 
     id: Optional[int] = Field(default=None, primary_key=True)
     parcel_id: int = Field(foreign_key="parcels.id", index=True)
     name: str
     crop_id: Optional[int] = Field(default=None, foreign_key="crops.id")
-    # Metros desde la esquina superior izquierda de la parcela
-    pos_x_m: float
-    pos_y_m: float
-    radius_m: float = 1.0
+    left_pct: float = 0.0
+    top_pct: float = 0.0
+    width_pct: float = 100.0
+    height_pct: float = 100.0
     api_key_hash: str
     active: bool = True
 
-    parcel: Optional[Parcel] = Relationship(back_populates="nodes")
-    sensors: list["Sensor"] = Relationship(back_populates="node")
+    parcel: Optional[Parcel] = Relationship(back_populates="sectors")
+    sensors: list["Sensor"] = Relationship(back_populates="sector")
 
 
 class Sensor(SQLModel, table=True):
     __tablename__ = "sensors"
+    __table_args__ = (UniqueConstraint("sector_id", "type"),)  # un sensor de cada tipo por sector
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    node_id: int = Field(foreign_key="nodes.id", index=True)
+    sector_id: int = Field(foreign_key="sectors.id", index=True)
     type: str
     unit: str
     description: str = ""
-    # Si están vacíos se usan los óptimos del cultivo del nodo
+    # Si están vacíos se usan los óptimos del cultivo del sector
     threshold_low: Optional[float] = None
     threshold_high: Optional[float] = None
     active: bool = True
 
-    node: Optional[Node] = Relationship(back_populates="sensors")
+    sector: Optional[Sector] = Relationship(back_populates="sensors")
 
 
 class SensorData(SQLModel, table=True):

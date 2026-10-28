@@ -37,7 +37,7 @@ class LecturaSalida(BaseModel):
 def recibir_lectura(
     sensor_id: int,
     lectura: LecturaEntrada,
-    x_api_key: str = Header(default="", description="Clave del aparato (nodo) al que pertenece el sensor"),
+    x_api_key: str = Header(default="", description="Clave del aparato del sector al que pertenece el sensor"),
 ) -> LecturaSalida:
     if lectura.sensor_id is not None and lectura.sensor_id != sensor_id:
         raise HTTPException(422, "El sensor_id del cuerpo no coincide con el de la dirección.")

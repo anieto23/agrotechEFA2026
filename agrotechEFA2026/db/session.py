@@ -33,7 +33,8 @@ def obtener_motor() -> Engine:
 
 
 def crear_tablas(motor: Engine | None = None) -> None:
-    """Crea las tablas que falten. No cambia las que ya existen (para eso, migraciones)."""
+    """Crea las tablas de golpe, sin migraciones. Solo para tests con bases en memoria;
+    la app y el seed usan migrar.actualizar_bd()."""
     SQLModel.metadata.create_all(motor or obtener_motor())
 
 

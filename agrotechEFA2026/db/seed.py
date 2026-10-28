@@ -17,16 +17,17 @@ from pathlib import Path
 
 from sqlmodel import Session, select
 
-from .models import TIPOS_MEDIDA, Crop, Node, Parcel, ParcelViewer, Sensor, User
+from .models import TIPOS_MEDIDA, Crop, Parcel, ParcelViewer, Sector, Sensor, User
 from .seguridad import generar_api_key, hash_api_key, hash_password
-from .session import crear_tablas, obtener_motor
+from .migrar import actualizar_bd
+from .session import obtener_motor
 
-# (nombre, tipo, ancho_m, largo_m, cultivo, umbral bajo de humedad del suelo)
-# Parcelas y umbrales iguales que en scripts/gen_sample_data.py; las medidas son de ejemplo.
+# (nombre, tipo, superficie m², forma, cultivo, umbral bajo de humedad del suelo)
+# Parcelas y umbrales iguales que en scripts/gen_sample_data.py; superficies y formas de ejemplo.
 PARCELAS_DEMO = [
-    ("Invernadero tomates", "indoor", 40.0, 25.0, "tomate", 40.0),
-    ("Aguacates", "outdoor", 100.0, 60.0, "aguacate", 35.0),
-    ("Mangos", "outdoor", 80.0, 50.0, "mango", 30.0),
+    ("Invernadero tomates", "indoor", 1000.0, "rectangle", "tomate", 40.0),
+    ("Aguacates", "outdoor", 6000.0, "polygon", "aguacate", 35.0),
+    ("Mangos", "outdoor", 4000.0, "rectangle", "mango", 30.0),
 ]
 # Sin rangos óptimos hasta tener fuentes fiables (ver docs/contrato.md)
 CULTIVOS_DEMO = ["tomate", "aguacate", "mango", "chirimoya"]
@@ -47,28 +48,23 @@ def sembrar(s: Session, passwords: dict[str, str]) -> dict[str, str]:
     s.flush()  # para tener los ids antes de usarlos como claves ajenas
 
     claves: dict[str, str] = {}
-    for nombre, tipo, ancho, largo, cultivo, umbral_suelo in PARCELAS_DEMO:
-        parcela = Parcel(owner_id=agricultor.id, name=nombre, kind=tipo, width_m=ancho, length_m=largo, location="Motril")
+    for nombre, tipo, area, forma, cultivo, umbral_suelo in PARCELAS_DEMO:
+        parcela = Parcel(owner_id=agricultor.id, name=nombre, kind=tipo, area_m2=area, shape=forma, location="Motril")
         s.add(parcela)
         s.flush()
         s.add(ParcelViewer(parcel_id=parcela.id, user_id=tecnico.id))
 
+        # Un sector que ocupa toda la parcela, con los 4 sensores que manda el simulador
         clave = generar_api_key()
-        nodo = Node(
-            parcel_id=parcela.id,
-            name=f"Nodo {nombre}",
-            crop_id=cultivos[cultivo].id,
-            pos_x_m=ancho / 2,
-            pos_y_m=largo / 2,
-            radius_m=5.0,
-            api_key_hash=hash_api_key(clave),
+        sector = Sector(
+            parcel_id=parcela.id, name="Sector 1", crop_id=cultivos[cultivo].id, api_key_hash=hash_api_key(clave)
         )
-        s.add(nodo)
+        s.add(sector)
         s.flush()
 
         for tipo_medida, (unidad, _, _) in TIPOS_MEDIDA.items():
             bajo = umbral_suelo if tipo_medida == "soil_moisture" else None
-            sensor = Sensor(node_id=nodo.id, type=tipo_medida, unit=unidad, threshold_low=bajo)
+            sensor = Sensor(sector_id=sector.id, type=tipo_medida, unit=unidad, threshold_low=bajo)
             s.add(sensor)
             s.flush()
             claves[str(sensor.id)] = clave
@@ -85,7 +81,7 @@ def _password(variable: str) -> tuple[str, bool]:
 
 def main() -> None:
     motor = obtener_motor()
-    crear_tablas(motor)
+    actualizar_bd(motor)
     with Session(motor) as s:
         if s.exec(select(User)).first():
             print("La base de datos ya tiene datos; no se toca. Borra agrotech.db para empezar de cero.")
