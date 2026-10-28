@@ -1,8 +1,8 @@
-# Copia este archivo y rellénalo. La clave de la API sale de claves_demo.json (o del alta del nodo).
+# Copia este archivo y rellénalo. La clave de la API sale de claves_demo.json (o del clave del sector en el panel).
 WIFI_SSID = "mi-wifi"          # en clase: usa el punto de acceso del móvil
 WIFI_PASS = "mi-clave"
 API_URL = "http://192.168.1.50:8000"  # IP del ordenador que corre la app
-API_KEY = "clave-del-nodo"
+API_KEY = "clave-del-sector"
 # Ids de sensor en la base de datos (parcela 1 del seed: 1 temp, 2 aire, 3 suelo, 4 luz)
 SENSOR_IDS = {"temperature": 1, "air_humidity": 2, "soil_moisture": 3, "light": 4}
 INTERVALO_S = 30

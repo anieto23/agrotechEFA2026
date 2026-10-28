@@ -1,6 +1,6 @@
-# Hardware: nodo con ESP32
+# Hardware: aparato con ESP32
 
-Un **nodo** (ESP32 con 4 sondas) envía cada 30 s sus lecturas a `POST /api/sensors/{id}/data` con su `X-API-Key`, igual que el simulador. Sin hardware se usa `scripts/esp32_virtual.py`.
+Un **aparato** (ESP32 con 4 sondas, uno por sector) envía cada 30 s sus lecturas a `POST /api/sensors/{id}/data` con su `X-API-Key`, igual que el simulador. Sin hardware se usa `scripts/esp32_virtual.py`.
 
 ## Material (≈ 25–35 €)
 | Pieza | Para qué |
@@ -26,7 +26,7 @@ El GPIO34 solo es de entrada y admite ADC aunque el WiFi esté activo (no uses G
 2. Copiar `firmware/esp32/config.py` rellenándolo (WiFi, `API_URL` con la IP del ordenador, `API_KEY`, ids de sensor) y volcar:
    `mpremote cp firmware/esp32/config.py :config.py` · `mpremote cp firmware/esp32/main.py :main.py` · `mpremote reset`.
 3. Ver lo que hace: `mpremote repl`.
-4. La clave del nodo sale de `claves_demo.json` (tras `python -m agrotechEFA2026.db.seed`). No la subas a git.
+4. La clave del sector sale de `claves_demo.json` (tras `python -m agrotechEFA2026.db.seed`). No la subas a git.
 
 ## Calibrar el suelo (obligatorio, sin esto el dato no vale)
 1. Sensor **al aire**: anotar `suelo.read_u16()` en el REPL → `SUELO_AIRE` (= 0 %).

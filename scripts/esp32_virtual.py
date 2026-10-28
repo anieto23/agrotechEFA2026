@@ -1,6 +1,6 @@
 """ESP32 virtual (plan B): se comporta como firmware/esp32/main.py sin hardware.
 
-Manda las 4 lecturas de un nodo cada N segundos con su X-API-Key. Si la API no responde
+Manda las 4 lecturas de un sector cada N segundos con su X-API-Key. Si la API no responde
 las guarda y las reenvía al volver (como el firmware). `--corte 3` simula un corte de WiFi
 tras 3 envíos para enseñar ese comportamiento.
 
@@ -47,7 +47,7 @@ def volcar(url: str, clave: str, pendientes: list) -> None:
 def main(argv=None) -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--url", default="http://localhost:8000")
-    ap.add_argument("--clave", required=True, help="X-API-Key del nodo")
+    ap.add_argument("--clave", required=True, help="X-API-Key del sector")
     ap.add_argument("--parcela", type=int, default=1, choices=[p.id for p in PARCELAS])
     ap.add_argument("--intervalo", type=float, default=30.0)
     ap.add_argument("--corte", type=int, metavar="N", help="simula corte de WiFi tras N envíos")
