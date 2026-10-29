@@ -122,18 +122,58 @@ def punto_contorno(punto: dict[str, rx.Var]) -> rx.Component:
     )
 
 
+def lineas_cuadricula() -> list[rx.Component]:
+    return [
+        *[
+            rx.box(
+                position="absolute",
+                top="0",
+                bottom="0",
+                left=f"{x}%",
+                width="1px",
+                background="#646464",
+                pointer_events="none",
+            )
+            for x in PUNTOS_CUADRICULA
+        ],
+        *[
+            rx.box(
+                position="absolute",
+                left="0",
+                right="0",
+                top=f"{y}%",
+                height="1px",
+                background="#646464",
+                pointer_events="none",
+            )
+            for y in PUNTOS_CUADRICULA
+        ],
+    ]
+
+
 def formulario_dibujo() -> rx.Component:
     celdas = [
         rx.button(
+            rx.box(
+                width="8px",
+                height="8px",
+                border_radius="50%",
+                background="#E7B85C",
+                pointer_events="none",
+            ),
             on_click=DashboardState.agregar_vertice(x, y),
             aria_label=f"Añadir vértice en {x}%, {y}%",
-            width="100%",
-            height="100%",
-            min_height="40px",
+            position="absolute",
+            left=f"{x}%",
+            top=f"{y}%",
+            transform="translate(-50%, -50%)",
+            width="40px",
+            height="40px",
             padding="0",
-            border="1px dashed #646464",
-            border_radius="0",
+            border="0",
+            border_radius="50%",
             background="transparent",
+            z_index="1",
             _hover={"background": "#3D5A43"},
         )
         for y in PUNTOS_CUADRICULA
@@ -147,13 +187,8 @@ def formulario_dibujo() -> rx.Component:
             size="2",
         ),
         rx.box(
-            rx.grid(
-                *celdas,
-                columns="repeat(7, minmax(0, 1fr))",
-                rows="repeat(7, minmax(0, 1fr))",
-                width="100%",
-                height="100%",
-            ),
+            *lineas_cuadricula(),
+            *celdas,
             rx.cond(
                 DashboardState.vertices_nueva_parcela.length() >= 3,
                 rx.box(
@@ -346,14 +381,26 @@ def sector_dibujado(sector: dict[str, rx.Var]) -> rx.Component:
 def formulario_dibujo_sectores() -> rx.Component:
     botones = [
         rx.button(
+            rx.box(
+                width="8px",
+                height="8px",
+                border_radius="50%",
+                background="#E7B85C",
+                pointer_events="none",
+            ),
             on_click=DashboardState.agregar_vertice_sector(x, y),
             aria_label=f"Añadir vértice de sector en {x}%, {y}%",
-            width="100%",
-            height="100%",
+            position="absolute",
+            left=f"{x}%",
+            top=f"{y}%",
+            transform="translate(-50%, -50%)",
+            width="40px",
+            height="40px",
             padding="0",
-            border="1px dashed #646464",
-            border_radius="0",
+            border="0",
+            border_radius="50%",
             background="transparent",
+            z_index="1",
             _hover={"background": "#3D5A43"},
         )
         for y in PUNTOS_CUADRICULA
@@ -368,13 +415,8 @@ def formulario_dibujo_sectores() -> rx.Component:
             size="2",
         ),
         rx.box(
-            rx.grid(
-                *botones,
-                columns="repeat(7, minmax(0, 1fr))",
-                rows="repeat(7, minmax(0, 1fr))",
-                width="100%",
-                height="100%",
-            ),
+            *lineas_cuadricula(),
+            *botones,
             rx.foreach(
                 DashboardState.sectores_dibujados_temporales,
                 sector_dibujado,
