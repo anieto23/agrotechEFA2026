@@ -23,6 +23,7 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
                 sector["outline"],
                 "inset(0)",
             ),
+            pointer_events="auto",
             _hover={"background": "#3D5A43"},
             on_click=DashboardState.abrir_sector(sector["id"]),
             aria_label=f"Abrir {sector['name']}, cultivo {sector['crop']}",
@@ -49,6 +50,7 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
         height=rx.cond(sector["outline"] != "", "100%", sector["height"] + "%"),
         color=colors.TEXT,
         white_space="normal",
+        pointer_events="none",
     )
 
 
