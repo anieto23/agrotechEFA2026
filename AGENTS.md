@@ -59,7 +59,8 @@ When you need to compile, run, reload, or debug a Reflex application, follow the
 
 ## Qué es esto
 Proyecto del **II Reto Agrotech Startup 2026** (EFA El Soto, Motril). Web app **Python + Reflex** que monitoriza en tiempo real los sensores de una parcela. Equipo de 6 personas (A, B, C, D, E, F) que usan IA para casi todo. Entrega **8-dic-2026**, final **16-dic-2026**. Objetivo: **ganar**.
-Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.md`.
+Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.md`. Qué se ha hecho hasta hoy: `docs/EVOLUCION.md`.
+**Idea del producto y cosas a tener en cuenta: `docs/IDEA-PROYECTO.md`.** Léela antes de proponer o programar funcionalidades y respeta sus «Cosas a tener en cuenta» (control distinto en interior/exterior, no inventar valores óptimos de cultivos, fases).
 
 ## Cómo trabaja el equipo (resumen que debes enseñar)
 1. **Todos pueden ver y cambiar todo.** No hay carpetas prohibidas.
@@ -71,7 +72,7 @@ Contexto completo: `docs/BASES-RETO.md`, `docs/contrato.md`, `docs/PLAN-EQUIPO.m
 ## Lo primero que haces en cada sesión
 1. Pregunta (o lee en el mensaje) **qué persona es: A, B, C, D, E o F**. Si no lo sabes, pregunta; no adivines.
 2. Si es su primera sesión, o dice que no sabe git, explícale en 5 líneas «Cómo trabaja el equipo» (arriba) con palabras normales.
-3. `git status` y `git branch --show-current`. Si tiene una tarea a medias, sigue en su rama; si no, sigue «Empiezo» (abajo).
+3. `git status` y `git branch --show-current`. Si tiene una tarea a medias, sigue en su rama («Actualiza mi rama»); si no, sigue «Empiezo» (abajo). En los dos casos acaba con «Comprobar que todo está bien».
 4. Antes de escribir código de Reflex, usa la skill `reflex-docs` (ver el bloque de arriba). No uses la memoria para APIs de Reflex: la versión es 0.10 y cambia.
 
 ## Quién se encarga de qué (orientativo)
@@ -110,11 +111,31 @@ Cuando diga algo de lo de abajo, sigue el procedimiento **entero y en orden**, e
 ### «Empiezo» / «voy a hacer X»
 1. Comprueba `git config user.name` y `user.email`; si faltan, pídeselos y configúralos.
 2. `git status`. Si hay cambios sin guardar de otra tarea, avisa antes de cambiar de rama (ofrece hacer commit en su rama; no los descartes).
-3. `git switch main` → `git pull` → `git switch -c feat/<letra>-<tema-corto>` (sin tildes ni espacios, p. ej. `feat/b-grafico-humedad`).
+3. `git switch main` → `git pull` → **«Comprobar que todo está bien»** (abajo) → `git switch -c feat/<letra>-<tema-corto>` (sin tildes ni espacios, p. ej. `feat/b-grafico-humedad`). Si la comprobación falla en `main`, no empieces encima: dilo y sigue «Algo se ha roto en `main`».
 4. Si la tarea es de lo que se encarga otra persona, recuérdale avisar en el grupo.
 
+### «Comprobar que todo está bien» (al empezar y cada vez que entre lo de los demás)
+Hazlo siempre después de un `git pull` o `git merge origin/main`, aunque la persona no lo pida: otro compañero puede haber añadido dependencias o roto algo.
+1. **Python:** `python --version` (en Windows también `py -0p` para ver los instalados). Hace falta **3.11 o superior**; si no lo hay, para y díselo.
+2. **Entorno virtual:** si no existe la carpeta `.venv`, créala con ese Python (`python -m venv .venv`, o `py -3.12 -m venv .venv`). Usa siempre el Python de dentro: `.venv\Scripts\python.exe` en Windows, `.venv/bin/python` en Linux/Mac.
+3. **Dependencias:** `<python del .venv> -m pip install -r requirements.txt`. Hazlo siempre: si no ha cambiado nada tarda unos segundos, y si alguien añadió una librería la instala.
+4. **Base de datos:** `<python del .venv> -m agrotechEFA2026.db.migrar`. Aplica las migraciones nuevas a su `agrotech.db` **sin perder datos**. Si dice que es «de una versión antigua», explícale que son datos de prueba y, con su sí, bórrala y créala con `-m agrotechEFA2026.db.seed`.
+5. **Tests:** `<python del .venv> -m pytest -q`. Enseña el resultado real («50 passed»). Si algo falla, explícale qué y de quién parece (`git log -3 -- <archivo>`), no lo arregles a ciegas.
+6. Dile en una frase cómo está: «Todo bien: dependencias y base de datos al día, X tests en verde» o qué falla.
+- `.venv`, `agrotech.db` y `claves_demo.json` son de cada ordenador: nunca se suben (ya están en `.gitignore`).
+- Si al compilar o arrancar Reflex cambia `reflex.lock/package.json` sin que nadie lo haya tocado a propósito (lo reescribe en una sola línea), no lo subas: `git restore reflex.lock/package.json`.
+
+### Si cambias las tablas (`agrotechEFA2026/db/models.py`)
+Cada cambio de tablas lleva su **migración** (una «receta» que cambia la base de datos de los demás sin borrar sus datos):
+1. Antes de cambiar nada, `<python del .venv> -m agrotechEFA2026.db.migrar` (su base al día).
+2. Cambia `models.py` y luego `<python del .venv> -m agrotechEFA2026.db.migrar nueva "<qué cambia>"`. Crea `migrations/versions/000N_….py`.
+3. **Léela** antes de subirla: que solo haga lo que querías (Alembic a veces propone borrar algo que no toca). Si una columna nueva es obligatoria (`nullable=False`) y la tabla ya tiene filas, dale un valor por defecto (`server_default`).
+4. Sube la migración en el mismo commit que `models.py`. Avisa en el grupo: el contrato cambia.
+- `tests/test_migraciones.py` falla si alguien cambia `models.py` sin migración, o si dos personas crearon una a la vez (dos «cabezas»). En ese caso, en la rama de quien llega segundo: `<python del .venv> -m agrotechEFA2026.db.migrar unir`, que crea una migración que junta las dos; luego tests y commit.
+- Nunca edites una migración que ya está en `main`: haz otra nueva que corrija.
+
 ### «Actualiza mi rama» (o si lleva más de un día en la misma rama)
-`git fetch` → `git merge origin/main`. Explica que así trae lo que han hecho los demás y los conflictos salen pequeños.
+`git fetch` → `git merge origin/main` → «Comprobar que todo está bien». Explica que así trae lo que han hecho los demás y los conflictos salen pequeños.
 
 ### «Haz el commit» / «súbelo» / «ya he terminado»
 1. **Rama:** `git branch --show-current`. Si es `main`, crea su rama ahora (`git switch -c feat/<letra>-<tema>`; los cambios se van con ella). Nunca hagas commit en `main`.
@@ -123,15 +144,16 @@ Cuando diga algo de lo de abajo, sigue el procedimiento **entero y en orden**, e
    - Lo **sospechoso**: `.env`, claves, tokens, contraseñas, bases de datos `.db`, datos generados, archivos de más de 5 MB, `__pycache__`, `.web/`.
 3. **Secretos:** busca en lo que vas a subir `token`, `password`, `api_key`, `secret` y cosas como `123456789:ABC…`. Si hay alguno con valor real, para.
 4. **Prueba:** si hay tests, `python -m pytest` y enseña el resultado real. Si fallan, díselo y no sigas sin su sí (y ponlo en la descripción del PR).
-5. **Commit:** `git add <archivos>` y `git commit -m "<Verbo> <qué>"` en español («Añade…», «Corrige…», «Quita…»). Si hay dos temas distintos, dos commits.
-6. **Trae lo de los demás:** `git fetch` y `git merge origin/main`. Si hay conflicto, sigue «Conflicto». Si ha entrado algo nuevo, vuelve a pasar los tests.
-7. **Sube:** `git push -u origin <rama>`. Si dice *rejected* / *fetch first*: `git pull` (merge, no rebase) y vuelve a subir. Nunca `--force`.
-8. **PR:** si hay `gh` y sesión iniciada, `gh pr create --base main --title "..." --body "..."`. Si no, dale el enlace que imprimió `git push` (`.../pull/new/<rama>`) y **el título y la descripción ya escritos para pegar** (qué cambia, cómo probarlo, resultado de los tests, y si toca algo de lo que se encarga otra persona).
-9. **Unir:** explícale que en el PR debe ver «This branch has no conflicts with the base branch» y entonces pulsar **Merge pull request** → **Confirm merge**. Si GitHub dice que hay conflictos, no lo une: vuelve al paso 6. Si el cambio es grande o toca lo de otra persona, sugiérele que alguien le eche un vistazo antes (opcional).
-10. Termina con el resumen de «Al terminar una tarea».
+5. **Registro:** añade una línea arriba del todo en `docs/EVOLUCION.md` (bajo la fecha de hoy): quién (usuario de GitHub y letra), qué ha cambiado en una frase y «(PR #n)» si ya se sabe. Las bases del reto piden este registro.
+6. **Commit:** `git add <archivos>` y `git commit -m "<Verbo> <qué>"` en español («Añade…», «Corrige…», «Quita…»). Si hay dos temas distintos, dos commits.
+7. **Trae lo de los demás:** `git fetch` y `git merge origin/main`. Si hay conflicto, sigue «Conflicto». Si ha entrado algo nuevo, vuelve a pasar los tests.
+8. **Sube:** `git push -u origin <rama>`. Si dice *rejected* / *fetch first*: `git pull` (merge, no rebase) y vuelve a subir. Nunca `--force`.
+9. **PR:** si hay `gh` y sesión iniciada, `gh pr create --base main --title "..." --body "..."`. Si no, dale el enlace que imprimió `git push` (`.../pull/new/<rama>`) y **el título y la descripción ya escritos para pegar** (qué cambia, cómo probarlo, resultado de los tests, y si toca algo de lo que se encarga otra persona).
+10. **Unir:** explícale que en el PR debe ver «This branch has no conflicts with the base branch» y entonces pulsar **Merge pull request** → **Confirm merge**. Si GitHub dice que hay conflictos, no lo une: vuelve al paso 7. Si el cambio es grande o toca lo de otra persona, sugiérele que alguien le eche un vistazo antes (opcional).
+11. Termina con el resumen de «Al terminar una tarea».
 
 ### «Ya lo he unido» / «está en main»
-`git switch main` → `git pull` → `git branch -d <rama>` (con `-d`, nunca `-D`: si dice que no está unida, no la borres y avisa). Explica que la siguiente tarea empieza con una rama nueva.
+`git switch main` → `git pull` → `git branch -d <rama>` (con `-d`, nunca `-D`: si dice que no está unida, no la borres y avisa) → «Comprobar que todo está bien». Explica que la siguiente tarea empieza con una rama nueva.
 
 ### «Revisa el PR de X» / «échale un vistazo a lo de X»
 `git fetch` → `git switch <su-rama>` → arranca la app y los tests → di si hace lo que promete, si rompe algo y si hay secretos. Al acabar, vuelve a la rama en la que estaba.
@@ -182,8 +204,8 @@ No lo «arregles» a ciegas. Busca qué PR lo causó (`git log origin/main`). Lo
 - No abras ni modifiques archivos fuera de este repo.
 
 ## Dependencias y entorno
-- Python 3.12 funciona (el `pyproject.toml` pide ≥3.15, ignóralo hasta que se cambie). Reflex 0.10.
-- Instalar: `pip install -r requirements.txt` (si no existe, genéralo desde `pyproject.toml` en un PR propio). Arrancar: `python -m reflex run` (web :3000, API :8000).
+- Python 3.11 o superior (el equipo usa 3.12). Reflex 0.10.
+- Instalar (dentro del entorno virtual `.venv`): `pip install -r requirements.txt` (ver «Comprobar que todo está bien»). Si añades o cambias una dependencia, ponla a la vez en `pyproject.toml` y `requirements.txt`, dilo en el PR y en el mensaje para el grupo. Arrancar: `python -m reflex run` (web :3000, API :8000).
 - No instales dependencias nuevas sin añadirlas a `pyproject.toml` y avisar en el PR.
 - Si el ordenador va justo de memoria, no dejes `reflex run` abierto sin necesidad.
 

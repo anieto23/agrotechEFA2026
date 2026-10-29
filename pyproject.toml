@@ -1,14 +1,23 @@
 [project]
 name = "agrotechefa2026"
 version = "0.1.0"
-description = "Add your description here"
+description = "Monitorización de sensores de parcelas agrícolas (II Reto Agrotech 2026)"
 readme = "README.md"
+license = "GPL-3.0-or-later"
 authors = [
     { name = "anieto23", email = "anieto23@efaelsoto.com" }
 ]
-requires-python = ">=3.15"
+requires-python = ">=3.11"
 dependencies = [
-    "reflex>=0.10.0",
+    "reflex[db]>=0.10.0",
+    "fastapi>=0.115",
+    "requests>=2.31",
+    "fpdf2>=2.7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
 ]
 
 [project.scripts]

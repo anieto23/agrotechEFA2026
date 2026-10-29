@@ -1,0 +1,7 @@
+{
+  "_aviso": "Cifras orientativas para la demo. PENDIENTE: validarlas con el profesorado de la rama agraria (ver docs/contrato.md).",
+  "tomate":    {"umbral_suelo": 40, "objetivo_suelo": 65, "min_por_punto": 0.8},
+  "aguacate":  {"umbral_suelo": 35, "objetivo_suelo": 60, "min_por_punto": 1.2},
+  "mango":     {"umbral_suelo": 30, "objetivo_suelo": 55, "min_por_punto": 1.0},
+  "chirimoya": {"umbral_suelo": 35, "objetivo_suelo": 60, "min_por_punto": 1.0}
+}
