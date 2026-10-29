@@ -366,8 +366,8 @@ def sector_dibujado(sector: dict[str, rx.Var]) -> rx.Component:
         rx.text(
             sector["name"],
             position="absolute",
-            top="50%",
-            left="50%",
+            top=sector["label_y"] + "%",
+            left=sector["label_x"] + "%",
             transform="translate(-50%, -50%)",
             text_align="center",
             font_size="12px",
