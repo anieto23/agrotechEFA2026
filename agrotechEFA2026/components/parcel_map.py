@@ -7,7 +7,26 @@ from ..state.dashboard_state import DashboardState
 def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
     """Sector rectangular o poligonal, ubicado en porcentajes del plano."""
 
-    return rx.button(
+    return rx.box(
+        rx.button(
+            position="absolute",
+            top="0",
+            left="0",
+            width="100%",
+            height="100%",
+            padding="2",
+            border="1px solid #CACACA",
+            border_radius="0",
+            background="#343434",
+            clip_path=rx.cond(
+                sector["outline"] != "",
+                sector["outline"],
+                "inset(0)",
+            ),
+            _hover={"background": "#3D5A43"},
+            on_click=DashboardState.abrir_sector(sector["id"]),
+            aria_label=f"Abrir {sector['name']}, cultivo {sector['crop']}",
+        ),
         rx.vstack(
             rx.text(sector["name"], size="2", weight="bold"),
             rx.text(sector["crop_icon"], size="5"),
@@ -15,36 +34,21 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
             spacing="1",
             align="center",
             justify="center",
-            width="100%",
-            height="100%",
             position="absolute",
-            top=rx.cond(
-                sector["outline"] != "",
-                sector["label_y"] + "%",
-                "50%",
-            ),
-            left=rx.cond(
-                sector["outline"] != "",
-                sector["label_x"] + "%",
-                "50%",
-            ),
+            top=sector["label_y"] + "%",
+            left=sector["label_x"] + "%",
             transform="translate(-50%, -50%)",
+            max_width="90%",
+            pointer_events="none",
+            z_index="1",
         ),
         position="absolute",
         left=rx.cond(sector["outline"] != "", "0%", sector["left"] + "%"),
         top=rx.cond(sector["outline"] != "", "0%", sector["top"] + "%"),
         width=rx.cond(sector["outline"] != "", "100%", sector["width"] + "%"),
         height=rx.cond(sector["outline"] != "", "100%", sector["height"] + "%"),
-        padding="2",
-        border="1px solid #CACACA",
-        border_radius="0",
-        background="#343434",
-        clip_path=rx.cond(sector["outline"] != "", sector["outline"], "inset(0)"),
-        _hover={"background": "#3D5A43"},
         color=colors.TEXT,
         white_space="normal",
-        on_click=DashboardState.abrir_sector(sector["id"]),
-        aria_label=f"Abrir {sector['name']}, cultivo {sector['crop']}",
     )
 
 

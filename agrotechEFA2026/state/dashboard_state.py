@@ -232,6 +232,15 @@ def _punto_interior_poligono(
     return mejor_punto
 
 
+def _ubicar_etiqueta_sector(
+    sector: dict[str, str],
+    vertices: list[tuple[float, float]],
+) -> None:
+    x, y = _punto_interior_poligono(vertices)
+    sector["label_x"] = f"{x:.2f}"
+    sector["label_y"] = f"{y:.2f}"
+
+
 def _segmento_dentro_poligono(
     inicio: tuple[float, float],
     fin: tuple[float, float],
@@ -835,11 +844,10 @@ class DashboardState(rx.State):
             "100",
         )
         nuevo["outline"] = contorno
-        punto_etiqueta = _punto_interior_poligono(
-            [(vertice["x"], vertice["y"]) for vertice in vertices]
+        _ubicar_etiqueta_sector(
+            nuevo,
+            [(vertice["x"], vertice["y"]) for vertice in vertices],
         )
-        nuevo["label_x"] = f"{punto_etiqueta[0]:.2f}"
-        nuevo["label_y"] = f"{punto_etiqueta[1]:.2f}"
         self.sectores_dibujados_temporales = [
             *self.sectores_dibujados_temporales,
             nuevo,
@@ -1039,19 +1047,25 @@ class DashboardState(rx.State):
             },
         ]
         sector_id = str(max((int(s["id"]) for s in self.sectores), default=0) + 1)
-        self.sectores = [
-            *self.sectores,
-            _crear_sector(
-                sector_id,
-                parcela_id,
-                "Sector 1",
-                "Sin cultivo",
-                "0",
-                "0",
-                "100",
-                "100",
-            ),
-        ]
+        nuevo_sector = _crear_sector(
+            sector_id,
+            parcela_id,
+            "Sector 1",
+            "Sin cultivo",
+            "0",
+            "0",
+            "100",
+            "100",
+        )
+        if forma == "dibujada":
+            _ubicar_etiqueta_sector(
+                nuevo_sector,
+                [
+                    (int(punto["x"]), int(punto["y"]))
+                    for punto in self.vertices_nueva_parcela
+                ],
+            )
+        self.sectores = [*self.sectores, nuevo_sector]
         self.nuevo_nombre = ""
         self.nueva_area = ""
         self.error_formulario = ""

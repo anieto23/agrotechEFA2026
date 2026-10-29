@@ -3,12 +3,23 @@ import pytest
 from agrotechEFA2026.state.dashboard_state import (
     _punto_en_poligono,
     _punto_interior_poligono,
+    _ubicar_etiqueta_sector,
     calcular_medias,
     construir_contorno,
     dividir_sector,
     eliminar_parcela_de_datos,
     validar_sector_dibujado,
 )
+
+
+def test_etiqueta_sector_queda_dentro_de_parcela_dibujada_a_media_cuadricula():
+    sector = {"label_x": "50", "label_y": "50"}
+    parcela = [(7, 7), (50, 7), (50, 93), (7, 93)]
+
+    _ubicar_etiqueta_sector(sector, parcela)
+
+    assert sector["label_x"] == "28.50"
+    assert sector["label_y"] == "50.00"
 
 
 def test_punto_etiqueta_de_sector_concavo_queda_dentro_del_contorno():
