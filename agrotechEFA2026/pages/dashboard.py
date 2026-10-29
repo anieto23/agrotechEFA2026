@@ -559,7 +559,6 @@ def detalle_parcela() -> rx.Component:
                 variant="soft",
             ),
             rx.spacer(),
-            rx.badge(DashboardState.parcela_seleccionada["shape_label"]),
             align="center",
             width="100%",
             wrap="wrap",
@@ -575,8 +574,7 @@ def detalle_parcela() -> rx.Component:
                     ),
                     rx.text(
                         DashboardState.parcela_seleccionada["area_m2"],
-                        " m² · ",
-                        DashboardState.parcela_seleccionada["shape_label"],
+                        " m²",
                         color=colors.TEXT,
                         size="2",
                     ),
