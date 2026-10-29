@@ -8,25 +8,49 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
     """Sector rectangular o poligonal, ubicado en porcentajes del plano."""
 
     return rx.box(
-        rx.button(
+        rx.box(
+            rx.button(
+                position="absolute",
+                top="0",
+                left="0",
+                width="100%",
+                height="100%",
+                padding="2",
+                border="0",
+                border_radius="0",
+                background="#343434",
+                clip_path=rx.cond(
+                    sector["outline"] != "",
+                    sector["outline"],
+                    "inset(0)",
+                ),
+                pointer_events="auto",
+                _hover={"background": "#3D5A43"},
+                on_click=DashboardState.abrir_sector(sector["id"]),
+                aria_label=f"Abrir {sector['name']}, cultivo {sector['crop']}",
+            ),
+            rx.el.svg(
+                rx.el.polygon(
+                    points=sector["stroke_points"],
+                    fill="none",
+                    stroke=colors.TEXT,
+                    stroke_width="2",
+                    vector_effect="non-scaling-stroke",
+                ),
+                position="absolute",
+                top="0",
+                left="0",
+                width="100%",
+                height="100%",
+                view_box="0 0 100 100",
+                preserve_aspect_ratio="none",
+                pointer_events="none",
+            ),
             position="absolute",
             top="0",
             left="0",
             width="100%",
             height="100%",
-            padding="2",
-            border="1px solid #CACACA",
-            border_radius="0",
-            background="#343434",
-            clip_path=rx.cond(
-                sector["outline"] != "",
-                sector["outline"],
-                "inset(0)",
-            ),
-            pointer_events="auto",
-            _hover={"background": "#3D5A43"},
-            on_click=DashboardState.abrir_sector(sector["id"]),
-            aria_label=f"Abrir {sector['name']}, cultivo {sector['crop']}",
         ),
         rx.vstack(
             rx.text(sector["name"], size="2", weight="bold"),

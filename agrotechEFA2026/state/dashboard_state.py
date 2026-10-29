@@ -447,6 +447,7 @@ def _crear_sector(
         "width": width,
         "height": height,
         "outline": "",
+        "stroke_points": "0,0 100,0 100,100 0,100",
         "label_x": "50",
         "label_y": "50",
     }
@@ -844,6 +845,9 @@ class DashboardState(rx.State):
             "100",
         )
         nuevo["outline"] = contorno
+        nuevo["stroke_points"] = " ".join(
+            f"{vertice['x']},{vertice['y']}" for vertice in vertices
+        )
         _ubicar_etiqueta_sector(
             nuevo,
             [(vertice["x"], vertice["y"]) for vertice in vertices],
