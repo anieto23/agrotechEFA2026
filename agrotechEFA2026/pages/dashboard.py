@@ -113,11 +113,24 @@ def punto_contorno(punto: dict[str, rx.Var]) -> rx.Component:
         left=punto["x"] + "%",
         top=punto["y"] + "%",
         transform="translate(-50%, -50%)",
-        width="10px",
-        height="10px",
+        width="16px",
+        height="16px",
         border_radius="50%",
         background="#E7B85C",
-        border="2px solid #202020",
+        border="3px solid #202020",
+        box_shadow="0 0 0 2px #FFFFFF",
+        pointer_events="none",
+        z_index="2",
+    )
+
+
+def punto_disponible() -> rx.Component:
+    return rx.box(
+        width="10px",
+        height="10px",
+        border="2px solid #E7B85C",
+        border_radius="50%",
+        background="#202020",
         pointer_events="none",
     )
 
@@ -154,13 +167,7 @@ def lineas_cuadricula() -> list[rx.Component]:
 def formulario_dibujo() -> rx.Component:
     celdas = [
         rx.button(
-            rx.box(
-                width="8px",
-                height="8px",
-                border_radius="50%",
-                background="#E7B85C",
-                pointer_events="none",
-            ),
+            punto_disponible(),
             on_click=DashboardState.agregar_vertice(x, y),
             aria_label=f"Añadir vértice en {x}%, {y}%",
             position="absolute",
@@ -182,7 +189,8 @@ def formulario_dibujo() -> rx.Component:
 
     return rx.vstack(
         rx.text(
-            "Toca la cuadrícula para marcar los vértices del contorno.",
+            "Toca un punto vacío para elegirlo; los puntos dorados grandes ya están "
+            "seleccionados.",
             color=colors.TEXT,
             size="2",
         ),
@@ -381,13 +389,7 @@ def sector_dibujado(sector: dict[str, rx.Var]) -> rx.Component:
 def formulario_dibujo_sectores() -> rx.Component:
     botones = [
         rx.button(
-            rx.box(
-                width="8px",
-                height="8px",
-                border_radius="50%",
-                background="#E7B85C",
-                pointer_events="none",
-            ),
+            punto_disponible(),
             on_click=DashboardState.agregar_vertice_sector(x, y),
             aria_label=f"Añadir vértice de sector en {x}%, {y}%",
             position="absolute",
@@ -409,8 +411,8 @@ def formulario_dibujo_sectores() -> rx.Component:
 
     return rx.vstack(
         rx.text(
-            "Marca los vértices del sector en la parcela y cierra su contorno. "
-            "Puedes dejar zonas sin sector.",
+            "Toca un punto vacío para elegirlo; los puntos dorados grandes ya están "
+            "seleccionados. Puedes dejar zonas sin sector.",
             color=colors.TEXT,
             size="2",
         ),
