@@ -417,6 +417,16 @@ def formulario_dibujo_sectores() -> rx.Component:
             size="2",
         ),
         rx.box(
+            rx.box(
+                position="absolute",
+                top="0",
+                right="0",
+                bottom="0",
+                left="0",
+                clip_path=DashboardState.contorno_parcela_css,
+                background="#202020",
+                pointer_events="none",
+            ),
             *lineas_cuadricula(),
             *botones,
             rx.foreach(
@@ -446,8 +456,7 @@ def formulario_dibujo_sectores() -> rx.Component:
             overflow="hidden",
             border="1px solid #747474",
             border_radius="8px",
-            clip_path=DashboardState.contorno_parcela_css,
-            background="#202020",
+            background="#181818",
             role="group",
             aria_label="Cuadrícula para dibujar sectores dentro de la parcela",
         ),
