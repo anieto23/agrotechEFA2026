@@ -527,6 +527,9 @@ def _crear_parcela_dibujada(
         "shape": "dibujada",
         "shape_label": FORMAS["dibujada"],
         "outline": construir_contorno(vertices),
+        "stroke_points": " ".join(
+            f'{vertice["x"]},{vertice["y"]}' for vertice in vertices
+        ),
         "demo_alert": alerta_demo,
     }
 

@@ -52,6 +52,7 @@ def test_nueva_parcela_se_crea_siempre_con_forma_dibujada_y_contorno():
     assert parcela["outline"] == (
         "polygon(7% 7%, 50% 7%, 50% 50%, 7% 50%)"
     )
+    assert parcela["stroke_points"] == "7,7 50,7 50,50 7,50"
 
 
 def test_sectores_afectados_muestran_los_estados_de_aviso_de_ejemplo():

@@ -99,6 +99,19 @@ def parcela_map() -> rx.Component:
     """Vista esquemática de la forma y los sectores de una parcela."""
 
     forma = DashboardState.parcela_seleccionada["shape"]
+    puntos_contorno = rx.cond(
+        forma == "dibujada",
+        DashboardState.parcela_seleccionada["stroke_points"],
+        rx.cond(
+            forma == "cuadrado",
+            "16,0 84,0 84,100 16,100",
+            rx.cond(
+                forma == "poligono",
+                "18,0 83,8 100,42 76,100 15,92 0,35",
+                "0,0 100,0 100,100 0,100",
+            ),
+        ),
+    )
     recorte = rx.cond(
         forma == "dibujada",
         DashboardState.parcela_seleccionada["outline"],
@@ -118,7 +131,47 @@ def parcela_map() -> rx.Component:
     )
 
     return rx.box(
-        rx.foreach(DashboardState.sectores_parcela, sector_cell),
+        rx.box(
+            rx.foreach(DashboardState.sectores_parcela, sector_cell),
+            position="absolute",
+            top="0",
+            left="0",
+            width="100%",
+            height="100%",
+            overflow="hidden",
+            clip_path=recorte,
+            background="#202020",
+        ),
+        rx.el.svg(
+            rx.cond(
+                forma == "circulo",
+                rx.el.ellipse(
+                    cx="50",
+                    cy="50",
+                    rx="49",
+                    ry="48",
+                    fill="none",
+                    stroke=colors.TEXT,
+                    stroke_width="2",
+                    vector_effect="non-scaling-stroke",
+                ),
+                rx.el.polygon(
+                    points=puntos_contorno,
+                    fill="none",
+                    stroke=colors.TEXT,
+                    stroke_width="2",
+                    vector_effect="non-scaling-stroke",
+                ),
+            ),
+            position="absolute",
+            top="0",
+            left="0",
+            width="100%",
+            height="100%",
+            view_box="0 0 100 100",
+            preserve_aspect_ratio="none",
+            pointer_events="none",
+        ),
         position="relative",
         width="100%",
         max_width=rx.cond(forma == "circulo", "480px", "760px"),
@@ -127,10 +180,7 @@ def parcela_map() -> rx.Component:
             "1 / 1",
             "3 / 2",
         ),
-        overflow="hidden",
-        clip_path=recorte,
-        background="#202020",
-        border="2px solid #747474",
+        overflow="visible",
         border_radius="12px",
         role="group",
         aria_label="Plano de parcela dividido en sectores",
