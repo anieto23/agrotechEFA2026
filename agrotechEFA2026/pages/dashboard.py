@@ -43,9 +43,19 @@ def tarjeta_parcela(parcela: dict[str, rx.Var]) -> rx.Component:
         rx.vstack(
             rx.hstack(
                 rx.icon(tag="map", size=22, color=colors.PARCEL_STATUS),
-                rx.badge(parcela["shape_label"], color_scheme="gray"),
+                rx.spacer(),
+                rx.button(
+                    rx.icon(tag="trash-2", size=16, color="var(--red-9)"),
+                    on_click=DashboardState.solicitar_eliminacion_parcela(
+                        parcela["id"]
+                    ),
+                    variant="ghost",
+                    color_scheme="red",
+                    size="2",
+                    padding="1",
+                    aria_label=f"Eliminar parcela {parcela['name']}",
+                ),
                 width="100%",
-                justify="between",
                 align="center",
             ),
             rx.heading(parcela["name"], size="4", color=colors.TEXT),
@@ -88,15 +98,7 @@ def tarjeta_parcela(parcela: dict[str, rx.Var]) -> rx.Component:
                     spacing="2",
                     width="100%",
                 ),
-                rx.button(
-                    "Eliminar parcela",
-                    on_click=DashboardState.solicitar_eliminacion_parcela(
-                        parcela["id"]
-                    ),
-                    variant="soft",
-                    color_scheme="red",
-                    width="100%",
-                ),
+                rx.fragment(),
             ),
             spacing="3",
             align="start",
