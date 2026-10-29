@@ -84,7 +84,7 @@ El panel en `agrotechEFA2026/pages/dashboard.py` permite probar la navegación e
 parcelas, sectores y mediciones. La maqueta admite crear parcelas con superficie y forma predefinida, o dibujar un contorno
 marcando vértices en una cuadrícula. El dibujo permite deshacer el último punto y borrar los
 puntos y cerrar el contorno; no admite lados cruzados. También permite eliminar parcelas
-con confirmación, dividir sectores en horizontal o vertical, asignar cultivos y añadir
+con confirmación, dibujar sectores poligonales sin solapes, asignar cultivos y añadir
 sensores. Al eliminar una parcela también se eliminan sus sectores de muestra. Las medias
 ignoran sectores que todavía no tienen lectura para esa magnitud.
 
@@ -92,4 +92,7 @@ Esta parte aún usa datos de ejemplo en memoria: los cambios no se guardan al ce
 sesión. La base de datos ya guarda formas, contornos dibujados y sectores (ver
 [`docs/contrato.md`](docs/contrato.md)); falta conectar la maqueta a esas funciones. El contorno dibujado
 se guarda como proporciones de la cuadrícula, no representa coordenadas reales ni está a
-escala. El plano es esquemático y los sectores se subdividen con límites rectos.
+escala. En la maqueta se puede reemplazar la distribución de sectores dibujando sus
+contornos: se permiten huecos, se rechazan solapes y se valida que queden dentro de la
+parcela. La distribución dibujada es temporal; el modelo persistente todavía representa
+los sectores con límites rectangulares.

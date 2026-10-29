@@ -1,4 +1,5 @@
 import math
+import re
 
 import reflex as rx
 
@@ -13,6 +14,11 @@ FORMAS = {
 }
 
 PUNTOS_CUADRICULA = (7, 21, 36, 50, 64, 79, 93)
+FORMAS_POLIGONO = {
+    "poligono": [(18, 0), (83, 8), (100, 42), (76, 100), (15, 92), (0, 35)],
+    "cuadrado": [(16, 0), (84, 0), (84, 100), (16, 100)],
+    "rectangulo": [(0, 0), (100, 0), (100, 100), (0, 100)],
+}
 
 CULTIVOS = {
     "Sin cultivo": "🌱❌",
@@ -49,36 +55,6 @@ def construir_contorno(vertices: list[dict[str, int]]) -> str:
     if area_doble == 0:
         raise ValueError("Los vértices deben formar una superficie.")
 
-    def orientacion(
-        a: tuple[int, int], b: tuple[int, int], c: tuple[int, int]
-    ) -> int:
-        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
-
-    def sobre_segmento(
-        a: tuple[int, int], b: tuple[int, int], p: tuple[int, int]
-    ) -> bool:
-        return (
-            min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
-            and min(a[1], b[1]) <= p[1] <= max(a[1], b[1])
-        )
-
-    def se_cruzan(
-        a: tuple[int, int],
-        b: tuple[int, int],
-        c: tuple[int, int],
-        d: tuple[int, int],
-    ) -> bool:
-        o1, o2 = orientacion(a, b, c), orientacion(a, b, d)
-        o3, o4 = orientacion(c, d, a), orientacion(c, d, b)
-        if o1 * o2 < 0 and o3 * o4 < 0:
-            return True
-        return (
-            (o1 == 0 and sobre_segmento(a, b, c))
-            or (o2 == 0 and sobre_segmento(a, b, d))
-            or (o3 == 0 and sobre_segmento(c, d, a))
-            or (o4 == 0 and sobre_segmento(c, d, b))
-        )
-
     # Solo se cruzan los lados no contiguos; los vecinos comparten un vértice válido.
     for indice, inicio in enumerate(puntos):
         siguiente = (indice + 1) % len(puntos)
@@ -86,7 +62,7 @@ def construir_contorno(vertices: list[dict[str, int]]) -> str:
             otro_siguiente = (otro_indice + 1) % len(puntos)
             if siguiente == otro_indice or otro_siguiente == indice:
                 continue
-            if se_cruzan(
+            if _segmentos_intersectan(
                 inicio,
                 puntos[siguiente],
                 puntos[otro_indice],
@@ -96,6 +72,280 @@ def construir_contorno(vertices: list[dict[str, int]]) -> str:
 
     coordenadas = ", ".join(f"{x}% {y}%" for x, y in puntos)
     return f"polygon({coordenadas})"
+
+
+def _orientacion(
+    a: tuple[float, float], b: tuple[float, float], c: tuple[float, float]
+) -> float:
+    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+
+def _sobre_segmento(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    punto: tuple[float, float],
+) -> bool:
+    return (
+        min(a[0], b[0]) <= punto[0] <= max(a[0], b[0])
+        and min(a[1], b[1]) <= punto[1] <= max(a[1], b[1])
+    )
+
+
+def _segmentos_intersectan(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    c: tuple[float, float],
+    d: tuple[float, float],
+) -> bool:
+    o1, o2 = _orientacion(a, b, c), _orientacion(a, b, d)
+    o3, o4 = _orientacion(c, d, a), _orientacion(c, d, b)
+    if o1 * o2 < 0 and o3 * o4 < 0:
+        return True
+    return (
+        (o1 == 0 and _sobre_segmento(a, b, c))
+        or (o2 == 0 and _sobre_segmento(a, b, d))
+        or (o3 == 0 and _sobre_segmento(c, d, a))
+        or (o4 == 0 and _sobre_segmento(c, d, b))
+    )
+
+
+def _cruzan_en_interior(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    c: tuple[float, float],
+    d: tuple[float, float],
+) -> bool:
+    return (
+        _orientacion(a, b, c) * _orientacion(a, b, d) < 0
+        and _orientacion(c, d, a) * _orientacion(c, d, b) < 0
+    )
+
+
+def _parametros_interseccion(
+    a: tuple[float, float],
+    b: tuple[float, float],
+    c: tuple[float, float],
+    d: tuple[float, float],
+) -> list[float]:
+    direccion = (b[0] - a[0], b[1] - a[1])
+    borde = (d[0] - c[0], d[1] - c[1])
+    separacion = (c[0] - a[0], c[1] - a[1])
+    determinante = direccion[0] * borde[1] - direccion[1] * borde[0]
+    tolerancia = 1e-9
+
+    if abs(determinante) > tolerancia:
+        t = (
+            separacion[0] * borde[1] - separacion[1] * borde[0]
+        ) / determinante
+        u = (
+            separacion[0] * direccion[1] - separacion[1] * direccion[0]
+        ) / determinante
+        if -tolerancia <= t <= 1 + tolerancia and -tolerancia <= u <= 1 + tolerancia:
+            return [min(1.0, max(0.0, t))]
+        return []
+
+    if abs(
+        separacion[0] * direccion[1] - separacion[1] * direccion[0]
+    ) > tolerancia:
+        return []
+
+    longitud_cuadrada = direccion[0] ** 2 + direccion[1] ** 2
+    parametros = []
+    for punto in (c, d):
+        t = (
+            (punto[0] - a[0]) * direccion[0]
+            + (punto[1] - a[1]) * direccion[1]
+        ) / longitud_cuadrada
+        if -tolerancia <= t <= 1 + tolerancia:
+            parametros.append(min(1.0, max(0.0, t)))
+    return parametros
+
+
+def _punto_en_poligono(
+    punto: tuple[float, float],
+    poligono: list[tuple[float, float]],
+    incluir_borde: bool = True,
+) -> bool:
+    dentro = False
+    for inicio, fin in zip(poligono, poligono[1:] + poligono[:1]):
+        if (
+            _orientacion(inicio, fin, punto) == 0
+            and _sobre_segmento(inicio, fin, punto)
+        ):
+            return incluir_borde
+        if (inicio[1] > punto[1]) != (fin[1] > punto[1]):
+            corte_x = inicio[0] + (fin[0] - inicio[0]) * (
+                (punto[1] - inicio[1]) / (fin[1] - inicio[1])
+            )
+            if punto[0] < corte_x:
+                dentro = not dentro
+    return dentro
+
+
+def _punto_interior_poligono(
+    poligono: list[tuple[float, float]],
+) -> tuple[float, float]:
+    area_doble = sum(
+        inicio[0] * fin[1] - fin[0] * inicio[1]
+        for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+    )
+    centroide = (
+        sum(
+            (inicio[0] + fin[0])
+            * (inicio[0] * fin[1] - fin[0] * inicio[1])
+            for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+        )
+        / (3 * area_doble),
+        sum(
+            (inicio[1] + fin[1])
+            * (inicio[0] * fin[1] - fin[0] * inicio[1])
+            for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+        )
+        / (3 * area_doble),
+    )
+    if _punto_en_poligono(centroide, poligono, incluir_borde=False):
+        return centroide
+
+    coordenadas_y = sorted({punto[1] for punto in poligono})
+    mejor_punto = None
+    mejor_anchura = -1.0
+    for y_inferior, y_superior in zip(coordenadas_y, coordenadas_y[1:]):
+        y = (y_inferior + y_superior) / 2
+        intersecciones = []
+        for inicio, fin in zip(poligono, poligono[1:] + poligono[:1]):
+            if (inicio[1] > y) != (fin[1] > y):
+                intersecciones.append(
+                    inicio[0]
+                    + (fin[0] - inicio[0])
+                    * (y - inicio[1])
+                    / (fin[1] - inicio[1])
+                )
+        intersecciones.sort()
+        for izquierda, derecha in zip(intersecciones[::2], intersecciones[1::2]):
+            anchura = derecha - izquierda
+            if anchura > mejor_anchura:
+                mejor_anchura = anchura
+                mejor_punto = ((izquierda + derecha) / 2, y)
+
+    if mejor_punto is None:
+        raise ValueError("No se pudo encontrar el interior del sector.")
+    return mejor_punto
+
+
+def _ubicar_etiqueta_sector(
+    sector: dict[str, str],
+    vertices: list[tuple[float, float]],
+) -> None:
+    x, y = _punto_interior_poligono(vertices)
+    sector["label_x"] = f"{x:.2f}"
+    sector["label_y"] = f"{y:.2f}"
+
+
+def _segmento_dentro_poligono(
+    inicio: tuple[float, float],
+    fin: tuple[float, float],
+    poligono: list[tuple[float, float]],
+) -> bool:
+    parametros = [0.0, 1.0]
+    for borde, fin_borde in zip(poligono, poligono[1:] + poligono[:1]):
+        parametros.extend(
+            _parametros_interseccion(inicio, fin, borde, fin_borde)
+        )
+
+    ordenados = sorted(set(parametros))
+    for punto in (inicio, fin):
+        if not _punto_en_poligono(punto, poligono):
+            return False
+    for t1, t2 in zip(ordenados, ordenados[1:]):
+        muestra = (
+            inicio[0] + (fin[0] - inicio[0]) * ((t1 + t2) / 2),
+            inicio[1] + (fin[1] - inicio[1]) * ((t1 + t2) / 2),
+        )
+        if not _punto_en_poligono(muestra, poligono):
+            return False
+    return True
+
+
+def _vertices_css(contorno: str) -> list[tuple[float, float]]:
+    coincidencia = re.fullmatch(r"polygon\((.*)\)", contorno.strip())
+    if coincidencia is None:
+        raise ValueError("El contorno de la parcela no es válido.")
+    puntos = []
+    for coordenada in coincidencia.group(1).split(","):
+        valores = coordenada.strip().split()
+        if len(valores) != 2:
+            raise ValueError("El contorno de la parcela no es válido.")
+        puntos.append((float(valores[0].removesuffix("%")), float(valores[1].removesuffix("%"))))
+    return puntos
+
+
+def vertices_parcela(parcela: dict[str, str]) -> list[tuple[float, float]]:
+    if parcela.get("shape") == "dibujada":
+        return _vertices_css(parcela.get("outline", ""))
+    return FORMAS_POLIGONO.get(parcela.get("shape", "rectangulo"), FORMAS_POLIGONO["rectangulo"])
+
+
+def punto_en_parcela(
+    punto: tuple[float, float], parcela: dict[str, str], incluir_borde: bool = True
+) -> bool:
+    if parcela.get("shape") == "circulo":
+        distancia = ((punto[0] - 50) / 49) ** 2 + ((punto[1] - 50) / 48) ** 2
+        return distancia <= 1 if incluir_borde else distancia < 1
+    return _punto_en_poligono(punto, vertices_parcela(parcela), incluir_borde)
+
+
+def _vertices_sector(sector: dict[str, str]) -> list[tuple[float, float]]:
+    if sector.get("outline"):
+        return _vertices_css(sector["outline"])
+    left, top = float(sector["left"]), float(sector["top"])
+    right = left + float(sector["width"])
+    bottom = top + float(sector["height"])
+    return [(left, top), (right, top), (right, bottom), (left, bottom)]
+
+
+def validar_sector_dibujado(
+    parcela: dict[str, str],
+    vertices: list[dict[str, int]],
+    sectores_existentes: list[dict[str, str]],
+) -> str:
+    """Rechaza sectores fuera de la parcela o que se solapen con otros sectores."""
+
+    contorno = construir_contorno(vertices)
+    puntos = [(vertice["x"], vertice["y"]) for vertice in vertices]
+    for punto, siguiente in zip(puntos, puntos[1:] + puntos[:1]):
+        if parcela.get("shape") == "circulo":
+            dentro = punto_en_parcela(punto, parcela) and punto_en_parcela(
+                siguiente, parcela
+            )
+        else:
+            dentro = _segmento_dentro_poligono(
+                punto,
+                siguiente,
+                vertices_parcela(parcela),
+            )
+        if not dentro:
+            if not punto_en_parcela(punto, parcela) or not punto_en_parcela(
+                siguiente, parcela
+            ):
+                raise ValueError("Todos los vértices deben quedar dentro de la parcela.")
+            raise ValueError("Los lados del sector deben quedar dentro de la parcela.")
+
+    for existente in sectores_existentes:
+        otros_puntos = _vertices_sector(existente)
+        if set(puntos) == set(otros_puntos):
+            raise ValueError("Los sectores no pueden solaparse.")
+        for inicio, fin in zip(puntos, puntos[1:] + puntos[:1]):
+            for otro_inicio, otro_fin in zip(
+                otros_puntos, otros_puntos[1:] + otros_puntos[:1]
+            ):
+                if _cruzan_en_interior(inicio, fin, otro_inicio, otro_fin):
+                    raise ValueError("Los sectores no pueden solaparse.")
+        if any(_punto_en_poligono(punto, otros_puntos, False) for punto in puntos):
+            raise ValueError("Los sectores no pueden solaparse.")
+        if any(_punto_en_poligono(punto, puntos, False) for punto in otros_puntos):
+            raise ValueError("Los sectores no pueden solaparse.")
+
+    return contorno
 
 
 def calcular_medias(sectores: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -196,6 +446,9 @@ def _crear_sector(
         "top": top,
         "width": width,
         "height": height,
+        "outline": "",
+        "label_x": "50",
+        "label_y": "50",
     }
     lecturas = lecturas or {}
     for tipo, *_ in SENSORES:
@@ -287,6 +540,13 @@ class DashboardState(rx.State):
     sector_id_seleccionado: str = ""
     sector_abierto: bool = False
     parcela_id_pendiente_eliminar: str = ""
+    confirmar_redibujo_sectores_pendiente: bool = False
+    modo_dibujo_sectores: bool = False
+    contorno_sector_cerrado: bool = False
+    vertices_sector_en_edicion: list[dict[str, str]] = []
+    sectores_dibujados_temporales: list[dict[str, str]] = []
+    error_dibujo_sector: str = ""
+    mensaje_dibujo_sector: str = ""
 
     nuevo_nombre: str = ""
     nueva_area: str = ""
@@ -340,6 +600,28 @@ class DashboardState(rx.State):
         coordenadas = ", ".join(
             f'{punto["x"]}% {punto["y"]}%'
             for punto in self.vertices_nueva_parcela
+        )
+        return f"polygon({coordenadas})"
+
+    @rx.var
+    def contorno_parcela_css(self) -> str:
+        parcela = self.parcela_seleccionada
+        if parcela.get("shape") == "dibujada":
+            return parcela.get("outline", "inset(0)")
+        if parcela.get("shape") == "circulo":
+            return "ellipse(49% 48% at 50% 50%)"
+        forma = parcela.get("shape", "rectangulo")
+        puntos = FORMAS_POLIGONO.get(forma, FORMAS_POLIGONO["rectangulo"])
+        coordenadas = ", ".join(f"{x}% {y}%" for x, y in puntos)
+        return f"polygon({coordenadas})"
+
+    @rx.var
+    def contorno_sector_previsualizacion(self) -> str:
+        if len(self.vertices_sector_en_edicion) < 3:
+            return "none"
+        coordenadas = ", ".join(
+            f'{punto["x"]}% {punto["y"]}%'
+            for punto in self.vertices_sector_en_edicion
         )
         return f"polygon({coordenadas})"
 
@@ -437,6 +719,187 @@ class DashboardState(rx.State):
         self.mensaje_formulario = ""
 
     @rx.event
+    def solicitar_redibujar_sectores(self):
+        if not self.parcela_seleccionada:
+            self.mensaje_dibujo_sector = "Abre una parcela antes de dibujar sectores."
+            return
+        self.confirmar_redibujo_sectores_pendiente = True
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
+
+    @rx.event
+    def cancelar_solicitud_redibujar_sectores(self):
+        self.confirmar_redibujo_sectores_pendiente = False
+
+    @rx.event
+    def confirmar_redibujar_sectores(self):
+        if (
+            not self.confirmar_redibujo_sectores_pendiente
+            or not self.parcela_seleccionada
+        ):
+            return
+        self.confirmar_redibujo_sectores_pendiente = False
+        self.modo_dibujo_sectores = True
+        self.vertices_sector_en_edicion = []
+        self.contorno_sector_cerrado = False
+        self.sectores_dibujados_temporales = []
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
+
+    @rx.event
+    def agregar_vertice_sector(self, x: int, y: int):
+        if not self.modo_dibujo_sectores:
+            return
+        if x not in PUNTOS_CUADRICULA or y not in PUNTOS_CUADRICULA:
+            self.error_dibujo_sector = "El punto seleccionado no está en la cuadrícula."
+            return
+        punto = (x, y)
+        if not punto_en_parcela(punto, self.parcela_seleccionada):
+            self.error_dibujo_sector = "El vértice debe quedar dentro de la parcela."
+            return
+        if any(
+            vertice["x"] == str(x) and vertice["y"] == str(y)
+            for vertice in self.vertices_sector_en_edicion
+        ):
+            self.error_dibujo_sector = "Ese vértice ya está marcado."
+            return
+        self.vertices_sector_en_edicion = [
+            *self.vertices_sector_en_edicion,
+            {"x": str(x), "y": str(y)},
+        ]
+        self.contorno_sector_cerrado = False
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
+
+    @rx.event
+    def deshacer_vertice_sector(self):
+        if self.vertices_sector_en_edicion:
+            self.vertices_sector_en_edicion = self.vertices_sector_en_edicion[:-1]
+            self.contorno_sector_cerrado = False
+            self.error_dibujo_sector = ""
+            self.mensaje_dibujo_sector = ""
+
+    @rx.event
+    def limpiar_contorno_sector(self):
+        self.vertices_sector_en_edicion = []
+        self.contorno_sector_cerrado = False
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
+
+    @rx.event
+    def cerrar_contorno_sector(self):
+        try:
+            validar_sector_dibujado(
+                self.parcela_seleccionada,
+                [
+                    {"x": int(punto["x"]), "y": int(punto["y"])}
+                    for punto in self.vertices_sector_en_edicion
+                ],
+                self.sectores_dibujados_temporales,
+            )
+        except ValueError as error:
+            self.error_dibujo_sector = str(error)
+            self.mensaje_dibujo_sector = ""
+            return
+        self.contorno_sector_cerrado = True
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = "Sector válido. Puedes añadirlo al plano."
+
+    @rx.event
+    def crear_sector_dibujado(self):
+        if not self.contorno_sector_cerrado:
+            self.error_dibujo_sector = "Cierra un sector válido antes de añadirlo."
+            return
+        vertices = [
+            {"x": int(punto["x"]), "y": int(punto["y"])}
+            for punto in self.vertices_sector_en_edicion
+        ]
+        try:
+            contorno = validar_sector_dibujado(
+                self.parcela_seleccionada,
+                vertices,
+                self.sectores_dibujados_temporales,
+            )
+        except ValueError as error:
+            self.error_dibujo_sector = str(error)
+            self.mensaje_dibujo_sector = ""
+            return
+
+        sector_id = str(
+            max(
+                (int(sector["id"]) for sector in self.sectores),
+                default=0,
+            )
+            + len(self.sectores_dibujados_temporales)
+            + 1
+        )
+        nuevo = _crear_sector(
+            sector_id,
+            self.parcela_id_seleccionada,
+            f"Sector {len(self.sectores_dibujados_temporales) + 1}",
+            "Sin cultivo",
+            "0",
+            "0",
+            "100",
+            "100",
+        )
+        nuevo["outline"] = contorno
+        _ubicar_etiqueta_sector(
+            nuevo,
+            [(vertice["x"], vertice["y"]) for vertice in vertices],
+        )
+        self.sectores_dibujados_temporales = [
+            *self.sectores_dibujados_temporales,
+            nuevo,
+        ]
+        self.vertices_sector_en_edicion = []
+        self.contorno_sector_cerrado = False
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = f"{nuevo['name']} añadido al plano."
+
+    @rx.event
+    def terminar_dibujo_sectores(self):
+        if not self.modo_dibujo_sectores:
+            return
+        if self.vertices_sector_en_edicion:
+            self.error_dibujo_sector = (
+                "Añade o borra el sector en edición antes de terminar."
+            )
+            return
+        if not self.sectores_dibujados_temporales:
+            self.error_dibujo_sector = "Dibuja al menos un sector antes de terminar."
+            return
+        parcela_id = self.parcela_id_seleccionada
+        if any(
+            sector["parcel_id"] != parcela_id
+            for sector in self.sectores_dibujados_temporales
+        ):
+            self.error_dibujo_sector = "Los sectores dibujados no pertenecen a esta parcela."
+            return
+        self.sectores = [
+            sector
+            for sector in self.sectores
+            if sector["parcel_id"] != parcela_id
+        ] + self.sectores_dibujados_temporales
+        self.sector_id_seleccionado = self.sectores_dibujados_temporales[0]["id"]
+        self.sector_abierto = False
+        self.modo_dibujo_sectores = False
+        self.vertices_sector_en_edicion = []
+        self.contorno_sector_cerrado = False
+        self.sectores_dibujados_temporales = []
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
+
+    @rx.event
+    def cancelar_dibujo_sectores(self):
+        self.modo_dibujo_sectores = False
+        self.vertices_sector_en_edicion = []
+        self.contorno_sector_cerrado = False
+        self.sectores_dibujados_temporales = []
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
+
+    @rx.event
     def actualizar_tipo_sensor(self, valor: str):
         self.tipo_sensor_nuevo = valor
 
@@ -478,6 +941,13 @@ class DashboardState(rx.State):
         if not any(parcela["id"] == parcela_id for parcela in self.parcelas):
             self.mensaje_formulario = "La parcela seleccionada ya no existe."
             return
+        self.confirmar_redibujo_sectores_pendiente = False
+        self.modo_dibujo_sectores = False
+        self.contorno_sector_cerrado = False
+        self.vertices_sector_en_edicion = []
+        self.sectores_dibujados_temporales = []
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = parcela_id
         sectores = [
             sector for sector in self.sectores if sector["parcel_id"] == parcela_id
@@ -487,6 +957,13 @@ class DashboardState(rx.State):
 
     @rx.event
     def volver_al_panel(self):
+        self.confirmar_redibujo_sectores_pendiente = False
+        self.modo_dibujo_sectores = False
+        self.contorno_sector_cerrado = False
+        self.vertices_sector_en_edicion = []
+        self.sectores_dibujados_temporales = []
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = ""
         self.sector_id_seleccionado = ""
         self.sector_abierto = False
@@ -570,19 +1047,25 @@ class DashboardState(rx.State):
             },
         ]
         sector_id = str(max((int(s["id"]) for s in self.sectores), default=0) + 1)
-        self.sectores = [
-            *self.sectores,
-            _crear_sector(
-                sector_id,
-                parcela_id,
-                "Sector 1",
-                "Sin cultivo",
-                "0",
-                "0",
-                "100",
-                "100",
-            ),
-        ]
+        nuevo_sector = _crear_sector(
+            sector_id,
+            parcela_id,
+            "Sector 1",
+            "Sin cultivo",
+            "0",
+            "0",
+            "100",
+            "100",
+        )
+        if forma == "dibujada":
+            _ubicar_etiqueta_sector(
+                nuevo_sector,
+                [
+                    (int(punto["x"]), int(punto["y"]))
+                    for punto in self.vertices_nueva_parcela
+                ],
+            )
+        self.sectores = [*self.sectores, nuevo_sector]
         self.nuevo_nombre = ""
         self.nueva_area = ""
         self.error_formulario = ""
