@@ -81,9 +81,9 @@ En Windows usa `127.0.0.1` y no `localhost`: con `localhost` cada envío tarda u
 
 La aplicación registra la página principal desde `agrotechEFA2026/agrotechEFA2026.py`.
 El panel en `agrotechEFA2026/pages/dashboard.py` permite probar la navegación entre
-parcelas, sectores y mediciones. La maqueta admite crear parcelas con superficie y forma predefinida, o dibujar un contorno
-marcando vértices en una cuadrícula. El dibujo permite deshacer el último punto y borrar los
-puntos y cerrar el contorno; no admite lados cruzados. También permite eliminar parcelas
+parcelas, sectores y mediciones. La maqueta permite crear parcelas indicando su superficie
+y dibujando el contorno con vértices en una cuadrícula. Se pueden deshacer y borrar puntos,
+y cerrar el contorno; no se admiten lados cruzados. También permite eliminar parcelas
 con confirmación, dibujar sectores poligonales sin solapes, asignar cultivos y añadir
 sensores. Al eliminar una parcela también se eliminan sus sectores de muestra. Las medias
 ignoran sectores que todavía no tienen lectura para esa magnitud.

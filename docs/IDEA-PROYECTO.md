@@ -15,7 +15,7 @@ Una app (móvil, tablet y ordenador) donde el agricultor **dibuja su parcela a e
 - **Fechas:** entrega **8-dic-2026**, final **16-dic-2026** (Cooperativa Granada La Palma).
 
 ## Cómo funciona la app (flujo del usuario)
-1. **Crea una parcela:** nombre, **interior** (invernadero) o **exterior** (campo), **ancho y largo en metros**.
+1. **Crea una parcela:** nombre, **interior** (invernadero) o **exterior** (campo), superficie y contorno dibujado manualmente.
 2. **Coloca los sensores** en un plano 2D visto desde arriba, a escala (cuadrícula de 1 m). Cada sensor guarda su posición `x, y` en metros y la zona que cubre. Se pueden añadir más sensores después.
 3. **Elige el cultivo** de cada zona o sensor (aguacate, mango, chirimoya, tomate…).
 4. **Pulsa un sensor** y ve sus valores actuales junto a los óptimos del cultivo: «por debajo / bien / por encima», con texto e icono, no solo color.

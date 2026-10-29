@@ -1,6 +1,8 @@
 import pytest
 
 from agrotechEFA2026.state.dashboard_state import (
+    _crear_parcela_dibujada,
+    _crear_parcelas_demo,
     _punto_en_poligono,
     _punto_interior_poligono,
     _ubicar_etiqueta_sector,
@@ -10,6 +12,39 @@ from agrotechEFA2026.state.dashboard_state import (
     eliminar_parcela_de_datos,
     validar_sector_dibujado,
 )
+
+
+def test_parcelas_de_ejemplo_tienen_todas_un_contorno_dibujado():
+    parcelas = _crear_parcelas_demo()
+
+    assert [parcela["name"] for parcela in parcelas] == [
+        "Huerto de prácticas",
+        "Invernadero norte",
+        "Parcela de frutales",
+    ]
+    assert all(parcela["shape"] == "dibujada" for parcela in parcelas)
+    assert all(parcela["shape_label"] == "Dibujada" for parcela in parcelas)
+    assert all(parcela["outline"].startswith("polygon(") for parcela in parcelas)
+
+
+def test_nueva_parcela_se_crea_siempre_con_forma_dibujada_y_contorno():
+    parcela = _crear_parcela_dibujada(
+        "10",
+        "Bancal",
+        250,
+        [
+            {"x": 7, "y": 7},
+            {"x": 50, "y": 7},
+            {"x": 50, "y": 50},
+            {"x": 7, "y": 50},
+        ],
+    )
+
+    assert parcela["shape"] == "dibujada"
+    assert parcela["shape_label"] == "Dibujada"
+    assert parcela["outline"] == (
+        "polygon(7% 7%, 50% 7%, 50% 50%, 7% 50%)"
+    )
 
 
 def test_etiqueta_sector_queda_dentro_de_parcela_dibujada_a_media_cuadricula():
