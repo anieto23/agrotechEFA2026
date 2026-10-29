@@ -43,6 +43,23 @@ def tarjeta_parcela(parcela: dict[str, rx.Var]) -> rx.Component:
         rx.vstack(
             rx.hstack(
                 rx.icon(tag="map", size=22, color=colors.PARCEL_STATUS),
+                rx.cond(
+                    parcela["demo_alert"] == "warning",
+                    rx.badge(
+                        rx.icon(tag="triangle-alert", size=16),
+                        rx.text("Aviso de ejemplo"),
+                        color_scheme="orange",
+                    ),
+                    rx.cond(
+                        parcela["demo_alert"] == "danger",
+                        rx.badge(
+                            rx.icon(tag="octagon-alert", size=16),
+                            rx.text("Peligro de ejemplo"),
+                            color_scheme="red",
+                        ),
+                        rx.fragment(),
+                    ),
+                ),
                 rx.spacer(),
                 rx.button(
                     rx.icon(tag="trash-2", size=16, color="var(--red-9)"),

@@ -3,6 +3,7 @@ import pytest
 from agrotechEFA2026.state.dashboard_state import (
     _crear_parcela_dibujada,
     _crear_parcelas_demo,
+    _crear_sectores_demo,
     _punto_en_poligono,
     _punto_interior_poligono,
     _ubicar_etiqueta_sector,
@@ -25,6 +26,11 @@ def test_parcelas_de_ejemplo_tienen_todas_un_contorno_dibujado():
     assert all(parcela["shape"] == "dibujada" for parcela in parcelas)
     assert all(parcela["shape_label"] == "Dibujada" for parcela in parcelas)
     assert all(parcela["outline"].startswith("polygon(") for parcela in parcelas)
+    assert [parcela["demo_alert"] for parcela in parcelas] == [
+        "warning",
+        "danger",
+        "",
+    ]
 
 
 def test_nueva_parcela_se_crea_siempre_con_forma_dibujada_y_contorno():
@@ -42,9 +48,20 @@ def test_nueva_parcela_se_crea_siempre_con_forma_dibujada_y_contorno():
 
     assert parcela["shape"] == "dibujada"
     assert parcela["shape_label"] == "Dibujada"
+    assert parcela["demo_alert"] == ""
     assert parcela["outline"] == (
         "polygon(7% 7%, 50% 7%, 50% 50%, 7% 50%)"
     )
+
+
+def test_sectores_afectados_muestran_los_estados_de_aviso_de_ejemplo():
+    sectores = _crear_sectores_demo()
+
+    assert {
+        sector["id"]: sector["demo_alert"]
+        for sector in sectores
+        if sector["demo_alert"]
+    } == {"1": "warning", "5": "danger"}
 
 
 def test_etiqueta_sector_queda_dentro_de_parcela_dibujada_a_media_cuadricula():
