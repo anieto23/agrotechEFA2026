@@ -435,6 +435,7 @@ def _crear_sector(
     width: str,
     height: str,
     lecturas: dict[str, str] | None = None,
+    alerta_demo: str = "",
 ) -> dict[str, str]:
     datos = {
         "id": sector_id,
@@ -450,6 +451,7 @@ def _crear_sector(
         "stroke_points": "0,0 100,0 100,100 0,100",
         "label_x": "50",
         "label_y": "50",
+        "demo_alert": alerta_demo,
     }
     lecturas = lecturas or {}
     for tipo, *_ in SENSORES:
@@ -458,69 +460,14 @@ def _crear_sector(
     return datos
 
 
-def _crear_parcela_dibujada(
-    parcela_id: str,
-    nombre: str,
-    area: float,
-    vertices: list[dict[str, int]],
-) -> dict[str, str]:
-    return {
-        "id": parcela_id,
-        "name": nombre,
-        "area_m2": f"{area:g}",
-        "shape": "dibujada",
-        "shape_label": FORMAS["dibujada"],
-        "outline": construir_contorno(vertices),
-    }
-
-
-def _crear_parcelas_demo() -> list[dict[str, str]]:
-    parcelas = (
-        ("1", "Huerto de prácticas", 1200, [(7, 7), (93, 7), (93, 93), (7, 93)]),
-        (
-            "2",
-            "Invernadero norte",
-            480,
-            [
-                (21, 7),
-                (79, 7),
-                (93, 21),
-                (93, 79),
-                (79, 93),
-                (21, 93),
-                (7, 79),
-                (7, 21),
-            ],
-        ),
-        (
-            "3",
-            "Parcela de frutales",
-            860,
-            [(21, 7), (79, 7), (93, 50), (79, 93), (21, 93), (7, 50)],
-        ),
-    )
+def _crear_sectores_demo() -> list[dict[str, str]]:
     return [
-        _crear_parcela_dibujada(
-            parcela_id,
-            nombre,
-            area,
-            [{"x": x, "y": y} for x, y in vertices],
-        )
-        for parcela_id, nombre, area, vertices in parcelas
-    ]
-
-
-class DashboardState(rx.State):
-    """Estado temporal de la maqueta de parcelas y sectores."""
-
-    parcelas: list[dict[str, str]] = _crear_parcelas_demo()
-    sectores: list[dict[str, str]] = [
         _crear_sector("1", "1", "Sector 1", "Tomate", "0", "0", "50", "50", {
             "temperature": "24.6",
             "soil_moisture": "42",
             "air_humidity": "61",
             "light": "18500",
-        }),
+        }, "warning"),
         _crear_sector("2", "1", "Sector 2", "Tomate", "50", "0", "50", "50", {
             "temperature": "23.8",
             "soil_moisture": "45",
@@ -544,7 +491,7 @@ class DashboardState(rx.State):
             "soil_moisture": "40",
             "air_humidity": "57",
             "light": "16900",
-        }),
+        }, "danger"),
         _crear_sector("6", "2", "Sector 2", "Tomate", "50", "0", "50", "100", {
             "temperature": "25.4",
             "soil_moisture": "44",
@@ -564,6 +511,76 @@ class DashboardState(rx.State):
             "light": "18700",
         }),
     ]
+
+
+def _crear_parcela_dibujada(
+    parcela_id: str,
+    nombre: str,
+    area: float,
+    vertices: list[dict[str, int]],
+    alerta_demo: str = "",
+) -> dict[str, str]:
+    return {
+        "id": parcela_id,
+        "name": nombre,
+        "area_m2": f"{area:g}",
+        "shape": "dibujada",
+        "shape_label": FORMAS["dibujada"],
+        "outline": construir_contorno(vertices),
+        "demo_alert": alerta_demo,
+    }
+
+
+def _crear_parcelas_demo() -> list[dict[str, str]]:
+    parcelas = (
+        (
+            "1",
+            "Huerto de prácticas",
+            1200,
+            [(7, 7), (93, 7), (93, 93), (7, 93)],
+            "warning",
+        ),
+        (
+            "2",
+            "Invernadero norte",
+            480,
+            [
+                (21, 7),
+                (79, 7),
+                (93, 21),
+                (93, 79),
+                (79, 93),
+                (21, 93),
+                (7, 79),
+                (7, 21),
+            ],
+            "danger",
+        ),
+        (
+            "3",
+            "Parcela de frutales",
+            860,
+            [(21, 7), (79, 7), (93, 50), (79, 93), (21, 93), (7, 50)],
+            "",
+        ),
+    )
+    return [
+        _crear_parcela_dibujada(
+            parcela_id,
+            nombre,
+            area,
+            [{"x": x, "y": y} for x, y in vertices],
+            alerta_demo,
+        )
+        for parcela_id, nombre, area, vertices, alerta_demo in parcelas
+    ]
+
+
+class DashboardState(rx.State):
+    """Estado temporal de la maqueta de parcelas y sectores."""
+
+    parcelas: list[dict[str, str]] = _crear_parcelas_demo()
+    sectores: list[dict[str, str]] = _crear_sectores_demo()
     parcela_id_seleccionada: str = ""
     sector_id_seleccionado: str = ""
     sector_abierto: bool = False
