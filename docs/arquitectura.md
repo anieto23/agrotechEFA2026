@@ -5,15 +5,18 @@
 - `agrotechEFA2026/agrotechEFA2026.py` crea la aplicación Reflex y registra la página principal.
 - `agrotechEFA2026/pages/dashboard.py` compone el listado de parcelas, el resumen y las vistas de parcela y sector.
 - `agrotechEFA2026/state/dashboard_state.py` mantiene los datos de demostración por sesión,
-  valida el alta de parcelas y los contornos de sus sectores, y calcula medias por magnitud.
+  solo permite crear parcelas dibujando su contorno, valida los sectores dibujados y calcula
+  medias por magnitud.
 - `agrotechEFA2026/components/parcel_map.py` muestra la forma de una parcela y permite abrir
   sectores rectangulares o con contorno dibujado.
 - `agrotechEFA2026/components/sensor_card.py` contiene la tarjeta reutilizable de lectura.
 - `agrotechEFA2026/components/colors.py` centraliza los colores usados por el panel.
 
 El panel permite navegar e interactuar con datos ficticios en memoria; no persiste cambios ni
-se conecta a la base de datos. La forma y los sectores ya están en el contrato y en `db/`; falta
-conectar el panel a esas funciones. El usuario puede dibujar parcelas y sectores mediante
+se conecta a la base de datos. Las parcelas nuevas se crean con contorno dibujado; las formas
+antiguas siguen siendo compatibles al mostrar datos existentes, pero las parcelas de ejemplo
+también tienen contornos dibujados. La forma y los sectores ya están en el contrato y en `db/`;
+falta conectar el panel a esas funciones. El usuario puede dibujar parcelas y sectores mediante
 vértices ajustados a una cuadrícula normalizada; los sectores pueden dejar huecos, pero no
 solaparse ni salir del contorno de la parcela. Esta distribución solo vive en la sesión y
 reemplaza los sectores de ejemplo al confirmarla. Los dibujos no representan coordenadas

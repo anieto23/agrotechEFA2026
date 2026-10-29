@@ -43,9 +43,19 @@ def tarjeta_parcela(parcela: dict[str, rx.Var]) -> rx.Component:
         rx.vstack(
             rx.hstack(
                 rx.icon(tag="map", size=22, color=colors.PARCEL_STATUS),
-                rx.badge(parcela["shape_label"], color_scheme="gray"),
+                rx.spacer(),
+                rx.button(
+                    rx.icon(tag="trash-2", size=16, color="var(--red-9)"),
+                    on_click=DashboardState.solicitar_eliminacion_parcela(
+                        parcela["id"]
+                    ),
+                    variant="ghost",
+                    color_scheme="red",
+                    size="2",
+                    padding="1",
+                    aria_label=f"Eliminar parcela {parcela['name']}",
+                ),
                 width="100%",
-                justify="between",
                 align="center",
             ),
             rx.heading(parcela["name"], size="4", color=colors.TEXT),
@@ -88,15 +98,7 @@ def tarjeta_parcela(parcela: dict[str, rx.Var]) -> rx.Component:
                     spacing="2",
                     width="100%",
                 ),
-                rx.button(
-                    "Eliminar parcela",
-                    on_click=DashboardState.solicitar_eliminacion_parcela(
-                        parcela["id"]
-                    ),
-                    variant="soft",
-                    color_scheme="red",
-                    width="100%",
-                ),
+                rx.fragment(),
             ),
             spacing="3",
             align="start",
@@ -276,7 +278,8 @@ def formulario_parcela() -> rx.Component:
         rx.vstack(
             rx.heading("Añadir parcela", size="4", color=colors.TEXT),
             rx.text(
-                "Indica su superficie y elige una forma. Los cambios se guardan "
+                "Indica su superficie y dibuja el contorno en la cuadrícula. "
+                "Los cambios se guardan "
                 "solo durante esta sesión de demostración.",
                 color=colors.TEXT,
                 size="2",
@@ -299,18 +302,7 @@ def formulario_parcela() -> rx.Component:
                 width="100%",
                 aria_label="Superficie de la parcela en metros cuadrados",
             ),
-            rx.select(
-                ["Rectángulo", "Cuadrado", "Círculo", "Polígono", "Dibujada"],
-                value=DashboardState.nueva_forma,
-                on_change=DashboardState.actualizar_forma,
-                width="100%",
-                aria_label="Forma de la parcela",
-            ),
-            rx.cond(
-                DashboardState.nueva_forma == "Dibujada",
-                formulario_dibujo(),
-                rx.fragment(),
-            ),
+            formulario_dibujo(),
             rx.cond(
                 DashboardState.error_formulario != "",
                 rx.callout(
@@ -336,6 +328,7 @@ def formulario_parcela() -> rx.Component:
                 on_click=DashboardState.crear_parcela,
                 width="100%",
                 color_scheme="green",
+                disabled=DashboardState.contorno_cerrado != True,
             ),
             spacing="3",
             align="start",
@@ -812,7 +805,6 @@ def dashboard() -> rx.Component:
                         align="start",
                         width="100%",
                     ),
-                    formulario_parcela(),
                     rx.heading("Mis parcelas", size="5", color=colors.TEXT),
                     rx.cond(
                         DashboardState.parcelas.length() > 0,
@@ -829,6 +821,7 @@ def dashboard() -> rx.Component:
                             width="100%",
                         ),
                     ),
+                    formulario_parcela(),
                     spacing="4",
                     align="start",
                     width="100%",

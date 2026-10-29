@@ -458,35 +458,62 @@ def _crear_sector(
     return datos
 
 
+def _crear_parcela_dibujada(
+    parcela_id: str,
+    nombre: str,
+    area: float,
+    vertices: list[dict[str, int]],
+) -> dict[str, str]:
+    return {
+        "id": parcela_id,
+        "name": nombre,
+        "area_m2": f"{area:g}",
+        "shape": "dibujada",
+        "shape_label": FORMAS["dibujada"],
+        "outline": construir_contorno(vertices),
+    }
+
+
+def _crear_parcelas_demo() -> list[dict[str, str]]:
+    parcelas = (
+        ("1", "Huerto de prácticas", 1200, [(7, 7), (93, 7), (93, 93), (7, 93)]),
+        (
+            "2",
+            "Invernadero norte",
+            480,
+            [
+                (21, 7),
+                (79, 7),
+                (93, 21),
+                (93, 79),
+                (79, 93),
+                (21, 93),
+                (7, 79),
+                (7, 21),
+            ],
+        ),
+        (
+            "3",
+            "Parcela de frutales",
+            860,
+            [(21, 7), (79, 7), (93, 50), (79, 93), (21, 93), (7, 50)],
+        ),
+    )
+    return [
+        _crear_parcela_dibujada(
+            parcela_id,
+            nombre,
+            area,
+            [{"x": x, "y": y} for x, y in vertices],
+        )
+        for parcela_id, nombre, area, vertices in parcelas
+    ]
+
+
 class DashboardState(rx.State):
     """Estado temporal de la maqueta de parcelas y sectores."""
 
-    parcelas: list[dict[str, str]] = [
-        {
-            "id": "1",
-            "name": "Huerto de prácticas",
-            "area_m2": "1200",
-            "shape": "rectangulo",
-            "shape_label": "Rectángulo",
-            "outline": "",
-        },
-        {
-            "id": "2",
-            "name": "Invernadero norte",
-            "area_m2": "480",
-            "shape": "circulo",
-            "shape_label": "Círculo",
-            "outline": "",
-        },
-        {
-            "id": "3",
-            "name": "Parcela de frutales",
-            "area_m2": "860",
-            "shape": "poligono",
-            "shape_label": "Polígono",
-            "outline": "",
-        },
-    ]
+    parcelas: list[dict[str, str]] = _crear_parcelas_demo()
     sectores: list[dict[str, str]] = [
         _crear_sector("1", "1", "Sector 1", "Tomate", "0", "0", "50", "50", {
             "temperature": "24.6",
@@ -551,7 +578,6 @@ class DashboardState(rx.State):
 
     nuevo_nombre: str = ""
     nueva_area: str = ""
-    nueva_forma: str = "Rectángulo"
     vertices_nueva_parcela: list[dict[str, str]] = []
     contorno_cerrado: bool = False
     error_formulario: str = ""
@@ -651,15 +677,7 @@ class DashboardState(rx.State):
         self.nueva_area = valor
 
     @rx.event
-    def actualizar_forma(self, valor: str):
-        self.nueva_forma = valor
-        self.error_formulario = ""
-        self.mensaje_formulario = ""
-
-    @rx.event
     def agregar_vertice(self, x: int, y: int):
-        if self.nueva_forma != FORMAS["dibujada"]:
-            return
         if self.contorno_cerrado:
             self.error_formulario = "Vuelve a editar el contorno antes de añadir vértices."
             return
@@ -1011,45 +1029,29 @@ class DashboardState(rx.State):
             self.error_formulario = "La superficie debe ser mayor que 0 m²."
             self.mensaje_formulario = ""
             return
-        forma = next(
-            (clave for clave, etiqueta in FORMAS.items() if etiqueta == self.nueva_forma),
-            None,
-        )
-        if forma is None:
-            self.error_formulario = "Selecciona una forma válida."
+        if not self.contorno_cerrado:
+            self.error_formulario = "Cierra un contorno válido antes de añadir la parcela."
             self.mensaje_formulario = ""
             return
-        contorno = ""
-        if forma == "dibujada":
-            if not self.contorno_cerrado:
-                self.error_formulario = "Cierra un contorno válido antes de añadir la parcela."
-                self.mensaje_formulario = ""
-                return
-            try:
-                contorno = construir_contorno(
-                    [
-                        {"x": int(punto["x"]), "y": int(punto["y"])}
-                        for punto in self.vertices_nueva_parcela
-                    ]
-                )
-            except ValueError as error:
-                self.error_formulario = str(error)
-                self.mensaje_formulario = ""
-                return
+
+        vertices = [
+            {"x": int(punto["x"]), "y": int(punto["y"])}
+            for punto in self.vertices_nueva_parcela
+        ]
 
         parcela_id = str(max((int(p["id"]) for p in self.parcelas), default=0) + 1)
-        etiqueta = FORMAS[forma]
-        self.parcelas = [
-            *self.parcelas,
-            {
-                "id": parcela_id,
-                "name": nombre,
-                "area_m2": f"{area:g}",
-                "shape": forma,
-                "shape_label": etiqueta,
-                "outline": contorno,
-            },
-        ]
+        try:
+            parcela = _crear_parcela_dibujada(
+                parcela_id,
+                nombre,
+                area,
+                vertices,
+            )
+        except ValueError as error:
+            self.error_formulario = str(error)
+            self.mensaje_formulario = ""
+            return
+        self.parcelas = [*self.parcelas, parcela]
         sector_id = str(max((int(s["id"]) for s in self.sectores), default=0) + 1)
         nuevo_sector = _crear_sector(
             sector_id,
@@ -1061,14 +1063,10 @@ class DashboardState(rx.State):
             "100",
             "100",
         )
-        if forma == "dibujada":
-            _ubicar_etiqueta_sector(
-                nuevo_sector,
-                [
-                    (int(punto["x"]), int(punto["y"]))
-                    for punto in self.vertices_nueva_parcela
-                ],
-            )
+        _ubicar_etiqueta_sector(
+            nuevo_sector,
+            [(punto["x"], punto["y"]) for punto in vertices],
+        )
         self.sectores = [*self.sectores, nuevo_sector]
         self.nuevo_nombre = ""
         self.nueva_area = ""
