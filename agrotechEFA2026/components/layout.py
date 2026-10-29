@@ -11,16 +11,18 @@ inferior. La entrada del menú cuyo nombre coincide con `titulo` sale resaltada.
 
 import reflex as rx
 
+from . import colors
+
 # --- Tema -----------------------------------------------------------------
-# Único sitio con colores de la app. Cada valor cambia solo según el modo
-# claro u oscuro. Usad estas claves en vez de escribir colores a mano.
+# Colores del menú y la cabecera según el modo claro u oscuro. Los del modo
+# oscuro salen de colors.py (el tema del panel) para que todo combine.
 COLORES = {
-    "fondo": rx.color_mode_cond(light="#F4F6F4", dark="#272727"),
+    "fondo": rx.color_mode_cond(light="#F4F6F4", dark=colors.DASHBOARD_BACKGROUND),
     "superficie": rx.color_mode_cond(light="#FFFFFF", dark="#1F1F1F"),
     "linea": rx.color_mode_cond(light="1px solid #DDE3DD", dark="1px solid #3A3A3A"),
     "texto": rx.color_mode_cond(light="#1F2A1F", dark="#EDEDED"),
-    "texto_suave": rx.color_mode_cond(light="#5B6B5B", dark="#CACACA"),
-    "acento": "#16A34A",
+    "texto_suave": rx.color_mode_cond(light="#5B6B5B", dark=colors.TEXT),
+    "acento": colors.PARCEL_STATUS,
     "acento_suave": rx.color_mode_cond(light="#DCFCE7", dark="#14532D"),
 }
 

@@ -4,6 +4,7 @@ Registro de cómo ha ido creciendo el proyecto, como piden las bases del reto. L
 **Cada PR añade aquí una línea** (fecha, quién, qué y número de PR). El detalle está en el historial de GitHub.
 
 ## 29-oct-2026
+- **rmolino23-art (C, gestión):** marco común de la app (`components/layout.py`): barra lateral en ordenador, barra inferior en móvil, cabecera con usuario, rol e indicador de alertas, e interruptor claro/oscuro que usa los colores de `colors.py`. Páginas vacías de Parcelas, Sensores y Alertas ya con el menú. Probado en ordenador y a 375 px. 125 tests.
 - **anieto23 (B, panel):** completa el registro histórico con los cambios de los PR #14–#18.
 - **anieto23 (B, panel):** mejora del dibujo manual: los puntos coinciden con la cuadrícula, se distinguen los seleccionados, se mantiene visible la cuadrícula completa al dibujar sectores, se puede abrir cualquier sector y sus nombres quedan centrados. También se mejora la visibilidad de los bordes. (PR #18)
 - **anieto23 (B, panel):** dibujo libre de sectores poligonales dentro de las parcelas, con validación para evitar solapamientos y sectores fuera del contorno. Los sectores dibujados se conservan al navegar por el panel durante la sesión. (PR #17)
