@@ -56,6 +56,23 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
             rx.text(sector["name"], size="2", weight="bold"),
             rx.text(sector["crop_icon"], size="5"),
             rx.text(sector["crop"], size="1"),
+            rx.cond(
+                sector["demo_alert"] == "warning",
+                rx.badge(
+                    rx.icon(tag="triangle-alert", size=14),
+                    rx.text("Aviso de ejemplo", size="1"),
+                    color_scheme="orange",
+                ),
+                rx.cond(
+                    sector["demo_alert"] == "danger",
+                    rx.badge(
+                        rx.icon(tag="octagon-alert", size=14),
+                        rx.text("Peligro de ejemplo", size="1"),
+                        color_scheme="red",
+                    ),
+                    rx.fragment(),
+                ),
+            ),
             spacing="1",
             align="center",
             justify="center",
