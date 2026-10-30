@@ -185,50 +185,83 @@ def _punto_en_poligono(
 def _punto_interior_poligono(
     poligono: list[tuple[float, float]],
 ) -> tuple[float, float]:
+    lados = list(zip(poligono, poligono[1:] + poligono[:1]))
     area_doble = sum(
         inicio[0] * fin[1] - fin[0] * inicio[1]
-        for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+        for inicio, fin in lados
     )
-    centroide = (
+    centro = (
         sum(
             (inicio[0] + fin[0])
             * (inicio[0] * fin[1] - fin[0] * inicio[1])
-            for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+            for inicio, fin in lados
         )
         / (3 * area_doble),
         sum(
             (inicio[1] + fin[1])
             * (inicio[0] * fin[1] - fin[0] * inicio[1])
-            for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+            for inicio, fin in lados
         )
         / (3 * area_doble),
     )
-    if _punto_en_poligono(centroide, poligono, incluir_borde=False):
-        return centroide
 
-    coordenadas_y = sorted({punto[1] for punto in poligono})
+    def distancia_borde(punto: tuple[float, float]) -> float:
+        distancias = []
+        for inicio, fin in lados:
+            dx = fin[0] - inicio[0]
+            dy = fin[1] - inicio[1]
+            longitud_cuadrada = dx * dx + dy * dy
+            proporcion = (
+                (punto[0] - inicio[0]) * dx + (punto[1] - inicio[1]) * dy
+            ) / longitud_cuadrada
+            proporcion = min(1.0, max(0.0, proporcion))
+            proyeccion = (
+                inicio[0] + proporcion * dx,
+                inicio[1] + proporcion * dy,
+            )
+            distancias.append(math.dist(punto, proyeccion))
+        return min(distancias)
+
     mejor_punto = None
-    mejor_anchura = -1.0
-    for y_inferior, y_superior in zip(coordenadas_y, coordenadas_y[1:]):
-        y = (y_inferior + y_superior) / 2
-        intersecciones = []
-        for inicio, fin in zip(poligono, poligono[1:] + poligono[:1]):
-            if (inicio[1] > y) != (fin[1] > y):
-                intersecciones.append(
-                    inicio[0]
-                    + (fin[0] - inicio[0])
-                    * (y - inicio[1])
-                    / (fin[1] - inicio[1])
-                )
-        intersecciones.sort()
-        for izquierda, derecha in zip(intersecciones[::2], intersecciones[1::2]):
-            anchura = derecha - izquierda
-            if anchura > mejor_anchura:
-                mejor_anchura = anchura
-                mejor_punto = ((izquierda + derecha) / 2, y)
+    mejor_margen = -1.0
+    mejor_distancia_centro = math.inf
+    for y in range(1, 100, 2):
+        for x in range(1, 100, 2):
+            punto = (float(x), float(y))
+            if not _punto_en_poligono(punto, poligono, incluir_borde=False):
+                continue
+            margen = distancia_borde(punto)
+            distancia_centro = math.dist(punto, centro)
+            if margen > mejor_margen + 1e-6 or (
+                abs(margen - mejor_margen) <= 1e-6
+                and distancia_centro < mejor_distancia_centro
+            ):
+                mejor_punto = punto
+                mejor_margen = margen
+                mejor_distancia_centro = distancia_centro
 
     if mejor_punto is None:
         raise ValueError("No se pudo encontrar el interior del sector.")
+
+    paso = 1.0
+    for _ in range(6):
+        x_centro, y_centro = mejor_punto
+        for y in (y_centro - paso, y_centro, y_centro + paso):
+            for x in (x_centro - paso, x_centro, x_centro + paso):
+                punto = (x, y)
+                if not _punto_en_poligono(punto, poligono, incluir_borde=False):
+                    continue
+                margen = distancia_borde(punto)
+                distancia_centro = math.dist(punto, centro)
+                if margen > mejor_margen + 1e-6 or (
+                    abs(margen - mejor_margen) <= 1e-6
+                    and distancia_centro < mejor_distancia_centro
+                ):
+                    mejor_punto = punto
+                    mejor_margen = margen
+                    mejor_distancia_centro = distancia_centro
+        paso /= 2
+
     return mejor_punto
 
 

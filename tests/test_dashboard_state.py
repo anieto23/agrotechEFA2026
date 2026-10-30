@@ -75,6 +75,26 @@ def test_etiqueta_sector_queda_dentro_de_parcela_dibujada_a_media_cuadricula():
     assert sector["label_y"] == "50.00"
 
 
+def test_etiqueta_elige_un_punto_centrado_con_margen_en_parcela_concava():
+    sector = {"label_x": "50", "label_y": "50"}
+    parcela = [
+        (7, 7),
+        (36, 7),
+        (36, 21),
+        (93, 21),
+        (93, 36),
+        (36, 36),
+        (36, 93),
+        (7, 93),
+    ]
+
+    _ubicar_etiqueta_sector(sector, parcela)
+
+    punto = (float(sector["label_x"]), float(sector["label_y"]))
+    assert _punto_en_poligono(punto, parcela, incluir_borde=False)
+    assert punto == pytest.approx((22.03, 30.44), abs=0.1)
+
+
 def test_punto_etiqueta_de_sector_concavo_queda_dentro_del_contorno():
     poligono = [
         (10, 10),
