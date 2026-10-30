@@ -7,6 +7,8 @@ from ..state.dashboard_state import (
     CULTIVOS,
     PUNTOS_CUADRICULA,
     SENSORES,
+    ZOOM_MAXIMO,
+    ZOOM_MINIMO,
     DashboardState,
 )
 
@@ -154,6 +156,63 @@ def punto_disponible() -> rx.Component:
     )
 
 
+def controles_zoom() -> rx.Component:
+    return rx.hstack(
+        rx.text("Zoom", color=colors.TEXT, size="2"),
+        rx.button(
+            "−",
+            on_click=DashboardState.alejar_lienzo,
+            disabled=DashboardState.zoom_porcentaje <= ZOOM_MINIMO,
+            variant="soft",
+            aria_label="Alejar cuadrícula",
+        ),
+        rx.text(
+            DashboardState.zoom_porcentaje,
+            "%",
+            color=colors.TEXT,
+            size="2",
+            aria_live="polite",
+        ),
+        rx.button(
+            "+",
+            on_click=DashboardState.acercar_lienzo,
+            disabled=DashboardState.zoom_porcentaje >= ZOOM_MAXIMO,
+            variant="soft",
+            aria_label="Acercar cuadrícula",
+        ),
+        rx.button(
+            "Restablecer",
+            on_click=DashboardState.restablecer_zoom_lienzo,
+            variant="soft",
+            aria_label="Restablecer zoom de la cuadrícula",
+        ),
+        width="100%",
+        wrap="wrap",
+        align="center",
+        spacing="2",
+    )
+
+
+def lienzo_zoom(contenido: rx.Component, etiqueta: str) -> rx.Component:
+    return rx.box(
+        rx.box(
+            contenido,
+            position="relative",
+            width=DashboardState.ancho_lienzo_zoom,
+            aspect_ratio="1 / 1",
+            background="#181818",
+        ),
+        width="100%",
+        max_width="480px",
+        aspect_ratio="1 / 1",
+        overflow="auto",
+        border="1px solid #747474",
+        border_radius="8px",
+        role="group",
+        aria_label=etiqueta,
+    )
+
+
 def lineas_cuadricula() -> list[rx.Component]:
     return [
         *[
@@ -209,38 +268,33 @@ def formulario_dibujo() -> rx.Component:
     return rx.vstack(
         rx.text(
             "Toca un punto vacío para elegirlo; los puntos dorados grandes ya están "
-            "seleccionados.",
+            "seleccionados. Usa el zoom y desplázate por la cuadrícula ampliada.",
             color=colors.TEXT,
             size="2",
         ),
-        rx.box(
-            *lineas_cuadricula(),
-            *celdas,
-            rx.cond(
-                DashboardState.vertices_nueva_parcela.length() >= 3,
-                rx.box(
-                    position="absolute",
-                    top="0",
-                    right="0",
-                    bottom="0",
-                    left="0",
-                    background="#3D5A43",
-                    opacity="0.6",
-                    clip_path=DashboardState.contorno_previsualizacion,
-                    pointer_events="none",
+        controles_zoom(),
+        lienzo_zoom(
+            rx.box(
+                *lineas_cuadricula(),
+                *celdas,
+                rx.cond(
+                    DashboardState.vertices_nueva_parcela.length() >= 3,
+                    rx.box(
+                        position="absolute",
+                        top="0",
+                        right="0",
+                        bottom="0",
+                        left="0",
+                        background="#3D5A43",
+                        opacity="0.6",
+                        clip_path=DashboardState.contorno_previsualizacion,
+                        pointer_events="none",
+                    ),
+                    rx.fragment(),
                 ),
-                rx.fragment(),
+                rx.foreach(DashboardState.vertices_nueva_parcela, punto_contorno),
             ),
-            rx.foreach(DashboardState.vertices_nueva_parcela, punto_contorno),
-            position="relative",
-            width="100%",
-            max_width="480px",
-            aspect_ratio="1 / 1",
-            overflow="hidden",
-            border="1px solid #747474",
-            border_radius="8px",
-            role="group",
-            aria_label="Cuadrícula para dibujar el contorno de la parcela",
+            "Cuadrícula para dibujar el contorno de la parcela",
         ),
         rx.text(
             "Vértices marcados: ",
@@ -446,54 +500,48 @@ def formulario_dibujo_sectores() -> rx.Component:
                 size="2",
             ),
         ),
-        rx.box(
+        controles_zoom(),
+        lienzo_zoom(
             rx.box(
-                position="absolute",
-                top="0",
-                right="0",
-                bottom="0",
-                left="0",
-                clip_path=DashboardState.contorno_parcela_css,
-                background="#202020",
-                pointer_events="none",
-            ),
-            *lineas_cuadricula(),
-            *botones,
-            rx.foreach(
-                DashboardState.sectores_visibles_en_dibujo,
-                sector_dibujado,
-            ),
-            rx.foreach(
-                DashboardState.sectores_dibujados_temporales,
-                sector_dibujado,
-            ),
-            rx.cond(
-                DashboardState.vertices_sector_en_edicion.length() >= 3,
                 rx.box(
                     position="absolute",
                     top="0",
                     right="0",
                     bottom="0",
                     left="0",
-                    background="#E7B85C",
-                    opacity="0.55",
-                    clip_path=DashboardState.contorno_sector_previsualizacion,
+                    clip_path=DashboardState.contorno_parcela_css,
+                    background="#202020",
                     pointer_events="none",
                 ),
-                rx.fragment(),
+                *lineas_cuadricula(),
+                *botones,
+                rx.foreach(
+                    DashboardState.sectores_visibles_en_dibujo,
+                    sector_dibujado,
+                ),
+                rx.foreach(
+                    DashboardState.sectores_dibujados_temporales,
+                    sector_dibujado,
+                ),
+                rx.cond(
+                    DashboardState.vertices_sector_en_edicion.length() >= 3,
+                    rx.box(
+                        position="absolute",
+                        top="0",
+                        right="0",
+                        bottom="0",
+                        left="0",
+                        background="#E7B85C",
+                        opacity="0.55",
+                        clip_path=DashboardState.contorno_sector_previsualizacion,
+                        pointer_events="none",
+                    ),
+                    rx.fragment(),
+                ),
+                rx.foreach(DashboardState.vertices_sector_en_edicion, punto_contorno),
+                contorno_parcela_svg(),
             ),
-            rx.foreach(DashboardState.vertices_sector_en_edicion, punto_contorno),
-            contorno_parcela_svg(),
-            position="relative",
-            width="100%",
-            max_width="480px",
-            aspect_ratio="1 / 1",
-            overflow="hidden",
-            border="1px solid #747474",
-            border_radius="8px",
-            background="#181818",
-            role="group",
-            aria_label="Cuadrícula para dibujar sectores dentro de la parcela",
+            "Cuadrícula para añadir o redimensionar sectores",
         ),
         rx.cond(
             DashboardState.sector_id_redimensionar != "",
