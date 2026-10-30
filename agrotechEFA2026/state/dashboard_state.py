@@ -13,7 +13,7 @@ FORMAS = {
     "dibujada": "Dibujada",
 }
 
-PUNTOS_CUADRICULA = (7, 21, 36, 50, 64, 79, 93)
+PUNTOS_CUADRICULA = (7, 14, 21, 29, 36, 43, 50, 57, 64, 72, 79, 86, 93)
 FORMAS_POLIGONO = {
     "poligono": [(18, 0), (83, 8), (100, 42), (76, 100), (15, 92), (0, 35)],
     "cuadrado": [(16, 0), (84, 0), (84, 100), (16, 100)],

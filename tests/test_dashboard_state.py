@@ -7,12 +7,21 @@ from agrotechEFA2026.state.dashboard_state import (
     _punto_en_poligono,
     _punto_interior_poligono,
     _ubicar_etiqueta_sector,
+    PUNTOS_CUADRICULA,
     calcular_medias,
     construir_contorno,
     dividir_sector,
     eliminar_parcela_de_datos,
     validar_sector_dibujado,
 )
+
+
+def test_cuadricula_duplica_puntos_y_conserva_las_posiciones_anteriores():
+    posiciones_anteriores = {7, 21, 36, 50, 64, 79, 93}
+
+    assert len(PUNTOS_CUADRICULA) == 13
+    assert tuple(sorted(PUNTOS_CUADRICULA)) == PUNTOS_CUADRICULA
+    assert posiciones_anteriores.issubset(PUNTOS_CUADRICULA)
 
 
 def test_parcelas_de_ejemplo_tienen_todas_un_contorno_dibujado():
