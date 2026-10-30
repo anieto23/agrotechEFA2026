@@ -373,6 +373,20 @@ def tarjeta_media(media: dict[str, rx.Var]) -> rx.Component:
 
 def sector_dibujado(sector: dict[str, rx.Var]) -> rx.Component:
     return rx.box(
+        rx.box(
+            position="absolute",
+            left=rx.cond(sector["outline"] != "", "0%", sector["left"] + "%"),
+            top=rx.cond(sector["outline"] != "", "0%", sector["top"] + "%"),
+            width=rx.cond(sector["outline"] != "", "100%", sector["width"] + "%"),
+            height=rx.cond(
+                sector["outline"] != "", "100%", sector["height"] + "%"
+            ),
+            background="#3D5A43",
+            opacity="0.85",
+            clip_path=rx.cond(
+                sector["outline"] != "", sector["outline"], "inset(0)"
+            ),
+        ),
         rx.text(
             sector["name"],
             position="absolute",
@@ -389,9 +403,6 @@ def sector_dibujado(sector: dict[str, rx.Var]) -> rx.Component:
         right="0",
         bottom="0",
         left="0",
-        background="#3D5A43",
-        opacity="0.85",
-        clip_path=sector["outline"],
         pointer_events="none",
     )
 
@@ -420,11 +431,20 @@ def formulario_dibujo_sectores() -> rx.Component:
     ]
 
     return rx.vstack(
-        rx.text(
-            "Los sectores existentes se conservan. Dibuja los nuevos en zonas libres "
-            "de la parcela; puedes dejar espacios sin sector.",
-            color=colors.TEXT,
-            size="2",
+        rx.cond(
+            DashboardState.sector_id_redimensionar != "",
+            rx.text(
+                "Dibuja el nuevo contorno del sector seleccionado. Al aplicarlo, "
+                "se conservarán su cultivo, sensores y lecturas.",
+                color=colors.TEXT,
+                size="2",
+            ),
+            rx.text(
+                "Los sectores existentes se conservan. Dibuja los nuevos en zonas "
+                "libres de la parcela; puedes dejar espacios sin sector.",
+                color=colors.TEXT,
+                size="2",
+            ),
         ),
         rx.box(
             rx.box(
@@ -440,7 +460,7 @@ def formulario_dibujo_sectores() -> rx.Component:
             *lineas_cuadricula(),
             *botones,
             rx.foreach(
-                DashboardState.sectores_parcela,
+                DashboardState.sectores_visibles_en_dibujo,
                 sector_dibujado,
             ),
             rx.foreach(
@@ -475,13 +495,22 @@ def formulario_dibujo_sectores() -> rx.Component:
             role="group",
             aria_label="Cuadrícula para dibujar sectores dentro de la parcela",
         ),
-        rx.text(
-            "Vértices del sector nuevo: ",
-            DashboardState.vertices_sector_en_edicion.length(),
-            " · Sectores nuevos dibujados: ",
-            DashboardState.sectores_dibujados_temporales.length(),
-            color=colors.TEXT,
-            size="2",
+        rx.cond(
+            DashboardState.sector_id_redimensionar != "",
+            rx.text(
+                "Vértices del nuevo contorno: ",
+                DashboardState.vertices_sector_en_edicion.length(),
+                color=colors.TEXT,
+                size="2",
+            ),
+            rx.text(
+                "Vértices del sector nuevo: ",
+                DashboardState.vertices_sector_en_edicion.length(),
+                " · Sectores nuevos dibujados: ",
+                DashboardState.sectores_dibujados_temporales.length(),
+                color=colors.TEXT,
+                size="2",
+            ),
         ),
         rx.cond(
             DashboardState.error_dibujo_sector != "",
@@ -507,7 +536,11 @@ def formulario_dibujo_sectores() -> rx.Component:
             rx.cond(
                 DashboardState.contorno_sector_cerrado,
                 rx.button(
-                    "Añadir sector",
+                    rx.cond(
+                        DashboardState.sector_id_redimensionar != "",
+                        "Aplicar nuevo contorno",
+                        "Añadir sector",
+                    ),
                     on_click=DashboardState.crear_sector_dibujado,
                     color_scheme="green",
                 ),
@@ -535,11 +568,16 @@ def formulario_dibujo_sectores() -> rx.Component:
             wrap="wrap",
         ),
         rx.hstack(
-            rx.button(
-                "Terminar distribución",
-                on_click=DashboardState.terminar_dibujo_sectores,
-                color_scheme="green",
-                disabled=DashboardState.sectores_dibujados_temporales.length() == 0,
+            rx.cond(
+                DashboardState.sector_id_redimensionar == "",
+                rx.button(
+                    "Terminar distribución",
+                    on_click=DashboardState.terminar_dibujo_sectores,
+                    color_scheme="green",
+                    disabled=DashboardState.sectores_dibujados_temporales.length()
+                    == 0,
+                ),
+                rx.fragment(),
             ),
             rx.button(
                 "Cancelar",
@@ -703,6 +741,11 @@ def detalle_sector() -> rx.Component:
                     on_change=DashboardState.cambiar_cultivo,
                     width="100%",
                     aria_label="Cultivo del sector",
+                ),
+                rx.button(
+                    "Redimensionar sector",
+                    on_click=DashboardState.iniciar_redimension_sector,
+                    variant="soft",
                 ),
                 rx.button(
                     "Eliminar sector",

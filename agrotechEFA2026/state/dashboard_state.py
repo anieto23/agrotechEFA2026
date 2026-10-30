@@ -336,6 +336,42 @@ def _vertices_sector(sector: dict[str, str]) -> list[tuple[float, float]]:
     return [(left, top), (right, top), (right, bottom), (left, bottom)]
 
 
+def reemplazar_geometria_sector(
+    sectores: list[dict[str, str]],
+    parcela_id: str,
+    sector_id: str,
+    vertices: list[dict[str, int]],
+    contorno: str,
+) -> list[dict[str, str]]:
+    """Actualiza el dibujo de un sector conservando sus datos y lecturas."""
+
+    if not any(
+        sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+        for sector in sectores
+    ):
+        raise ValueError("El sector que quieres redimensionar ya no existe.")
+
+    actualizado = next(
+        sector.copy()
+        for sector in sectores
+        if sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+    )
+    actualizado["outline"] = contorno
+    actualizado["stroke_points"] = " ".join(
+        f"{vertice['x']},{vertice['y']}" for vertice in vertices
+    )
+    _ubicar_etiqueta_sector(
+        actualizado,
+        [(vertice["x"], vertice["y"]) for vertice in vertices],
+    )
+    return [
+        actualizado
+        if sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+        else sector
+        for sector in sectores
+    ]
+
+
 def validar_sector_dibujado(
     parcela: dict[str, str],
     vertices: list[dict[str, int]],
@@ -662,6 +698,7 @@ class DashboardState(rx.State):
     sector_abierto: bool = False
     parcela_id_pendiente_eliminar: str = ""
     sector_id_pendiente_eliminar: str = ""
+    sector_id_redimensionar: str = ""
     modo_dibujo_sectores: bool = False
     contorno_sector_cerrado: bool = False
     vertices_sector_en_edicion: list[dict[str, str]] = []
@@ -696,6 +733,14 @@ class DashboardState(rx.State):
             sector
             for sector in self.sectores
             if sector["parcel_id"] == self.parcela_id_seleccionada
+        ]
+
+    @rx.var
+    def sectores_visibles_en_dibujo(self) -> list[dict[str, str]]:
+        return [
+            sector
+            for sector in self.sectores_parcela
+            if sector["id"] != self.sector_id_redimensionar
         ]
 
     @rx.var
@@ -841,6 +886,26 @@ class DashboardState(rx.State):
         self.sectores_dibujados_temporales = []
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
+        self.sector_id_redimensionar = ""
+
+    @rx.event
+    def iniciar_redimension_sector(self):
+        sector = self.sector_seleccionado
+        if not sector or sector["parcel_id"] != self.parcela_id_seleccionada:
+            self.mensaje_sensor = "Selecciona un sector válido antes de redimensionarlo."
+            return
+
+        self.sector_id_redimensionar = sector["id"]
+        self.sector_abierto = False
+        self.modo_dibujo_sectores = True
+        self.vertices_sector_en_edicion = []
+        self.contorno_sector_cerrado = False
+        self.sectores_dibujados_temporales = []
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = (
+            f"Dibuja el nuevo contorno de {sector['name']}. "
+            "El sector actual se conservará si cancelas."
+        )
 
     @rx.event
     def agregar_vertice_sector(self, x: int, y: int):
@@ -892,7 +957,7 @@ class DashboardState(rx.State):
                     for punto in self.vertices_sector_en_edicion
                 ],
                 [
-                    *self.sectores_parcela,
+                    *self.sectores_visibles_en_dibujo,
                     *self.sectores_dibujados_temporales,
                 ],
             )
@@ -918,13 +983,37 @@ class DashboardState(rx.State):
                 self.parcela_seleccionada,
                 vertices,
                 [
-                    *self.sectores_parcela,
+                    *self.sectores_visibles_en_dibujo,
                     *self.sectores_dibujados_temporales,
                 ],
             )
         except ValueError as error:
             self.error_dibujo_sector = str(error)
             self.mensaje_dibujo_sector = ""
+            return
+
+        if self.sector_id_redimensionar:
+            try:
+                self.sectores = reemplazar_geometria_sector(
+                    self.sectores,
+                    self.parcela_id_seleccionada,
+                    self.sector_id_redimensionar,
+                    vertices,
+                    contorno,
+                )
+            except ValueError as error:
+                self.error_dibujo_sector = str(error)
+                return
+
+            self.sector_id_seleccionado = self.sector_id_redimensionar
+            self.sector_id_redimensionar = ""
+            self.modo_dibujo_sectores = False
+            self.vertices_sector_en_edicion = []
+            self.contorno_sector_cerrado = False
+            self.error_dibujo_sector = ""
+            self.mensaje_dibujo_sector = (
+                "Sector redimensionado en esta maqueta; se conservan sus datos."
+            )
             return
 
         sector_id = str(
@@ -971,6 +1060,11 @@ class DashboardState(rx.State):
     def terminar_dibujo_sectores(self):
         if not self.modo_dibujo_sectores:
             return
+        if self.sector_id_redimensionar:
+            self.error_dibujo_sector = (
+                "Aplica o cancela el redimensionamiento del sector actual."
+            )
+            return
         if self.vertices_sector_en_edicion:
             self.error_dibujo_sector = (
                 "Añade o borra el sector en edición antes de terminar."
@@ -1001,6 +1095,7 @@ class DashboardState(rx.State):
         self.vertices_sector_en_edicion = []
         self.contorno_sector_cerrado = False
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
 
@@ -1010,6 +1105,7 @@ class DashboardState(rx.State):
         self.vertices_sector_en_edicion = []
         self.contorno_sector_cerrado = False
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
 
@@ -1101,6 +1197,7 @@ class DashboardState(rx.State):
         self.contorno_sector_cerrado = False
         self.vertices_sector_en_edicion = []
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = parcela_id
@@ -1117,6 +1214,7 @@ class DashboardState(rx.State):
         self.contorno_sector_cerrado = False
         self.vertices_sector_en_edicion = []
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = ""
@@ -1135,6 +1233,7 @@ class DashboardState(rx.State):
             return
         self.sector_id_seleccionado = sector_id
         self.sector_abierto = True
+        self.sector_id_redimensionar = ""
         self.mensaje_sensor = ""
 
     @rx.event

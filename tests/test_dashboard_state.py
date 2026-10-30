@@ -14,6 +14,7 @@ from agrotechEFA2026.state.dashboard_state import (
     dividir_sector,
     eliminar_parcela_de_datos,
     eliminar_sector_de_datos,
+    reemplazar_geometria_sector,
     validar_sector_dibujado,
 )
 
@@ -402,6 +403,58 @@ def test_agregar_sectores_rechaza_ids_duplicados_y_otra_parcela():
             sectores,
             "1",
             [{"id": "11", "parcel_id": "2"}],
+        )
+
+
+def test_redimensionar_sector_reemplaza_solo_el_contorno_y_conserva_sus_datos():
+    sector = {
+        "id": "10",
+        "parcel_id": "1",
+        "name": "Sector 1",
+        "crop": "Tomate",
+        "temperature": "24.6",
+        "has_temperature": "yes",
+        "left": "0",
+        "top": "0",
+        "width": "50",
+        "height": "50",
+        "outline": "",
+    }
+    otro_sector = {"id": "11", "parcel_id": "1", "name": "Sector 2"}
+    vertices = [
+        {"x": 7, "y": 7},
+        {"x": 36, "y": 7},
+        {"x": 36, "y": 36},
+        {"x": 7, "y": 36},
+    ]
+
+    resultado = reemplazar_geometria_sector(
+        [sector, otro_sector],
+        "1",
+        "10",
+        vertices,
+        construir_contorno(vertices),
+    )
+
+    assert resultado[0]["outline"] == (
+        "polygon(7% 7%, 36% 7%, 36% 36%, 7% 36%)"
+    )
+    assert resultado[0]["stroke_points"] == "7,7 36,7 36,36 7,36"
+    assert resultado[0]["crop"] == "Tomate"
+    assert resultado[0]["temperature"] == "24.6"
+    assert resultado[0]["has_temperature"] == "yes"
+    assert resultado[1] == otro_sector
+    assert sector["outline"] == ""
+
+
+def test_redimensionar_sector_inexistente_devuelve_error():
+    with pytest.raises(ValueError, match="ya no existe"):
+        reemplazar_geometria_sector(
+            [{"id": "10", "parcel_id": "2"}],
+            "1",
+            "10",
+            [{"x": 7, "y": 7}, {"x": 36, "y": 7}, {"x": 36, "y": 36}],
+            "polygon(7% 7%, 36% 7%, 36% 36%)",
         )
 
 
