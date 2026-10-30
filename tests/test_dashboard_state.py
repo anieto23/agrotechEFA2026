@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from agrotechEFA2026.state.dashboard_state import (
@@ -13,6 +15,7 @@ from agrotechEFA2026.state.dashboard_state import (
     ZOOM_PASO,
     agregar_sectores_a_parcela,
     calcular_medias,
+    calcular_superficie_sector,
     calcular_zoom,
     construir_contorno,
     dividir_sector,
@@ -82,6 +85,116 @@ def test_nueva_parcela_se_crea_siempre_con_forma_dibujada_y_contorno():
         "polygon(7% 7%, 50% 7%, 50% 50%, 7% 50%)"
     )
     assert parcela["stroke_points"] == "7,7 50,7 50,50 7,50"
+
+
+@pytest.mark.parametrize(
+    ("parcela", "sector", "esperada"),
+    [
+        (
+            {
+                "area_m2": "1000",
+                "shape": "dibujada",
+                "outline": "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+            },
+            {
+                "left": "0",
+                "top": "0",
+                "width": "50",
+                "height": "100",
+                "outline": "",
+            },
+            500,
+        ),
+        (
+            {
+                "area_m2": "800",
+                "shape": "dibujada",
+                "outline": "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+            },
+            {
+                "outline": "polygon(0% 0%, 50% 0%, 50% 50%, 0% 50%)",
+            },
+            200,
+        ),
+    ],
+)
+def test_calcular_superficie_sector_aplica_la_proporcion_del_contorno(
+    parcela, sector, esperada
+):
+    assert calcular_superficie_sector(parcela, sector) == esperada
+
+
+def test_calcular_superficie_sector_recorta_el_sector_al_contorno_de_parcela():
+    parcela = {
+        "area_m2": "200",
+        "shape": "dibujada",
+        "outline": "polygon(0% 0%, 100% 0%, 0% 100%)",
+    }
+    sector = {
+        "left": "0",
+        "top": "0",
+        "width": "50",
+        "height": "100",
+        "outline": "",
+    }
+    sector_automatico = {
+        "left": "0",
+        "top": "0",
+        "width": "100",
+        "height": "100",
+        "outline": "",
+    }
+
+    assert calcular_superficie_sector(parcela, sector) == 150
+    assert calcular_superficie_sector(parcela, sector_automatico) == 200
+
+
+def test_calcular_superficie_sector_recorta_contorno_concavo():
+    parcela = {
+        "area_m2": "640",
+        "shape": "dibujada",
+        "outline": (
+            "polygon(0% 0%, 100% 0%, 100% 40%, "
+            "40% 40%, 40% 100%, 0% 100%)"
+        ),
+    }
+    sector = {
+        "left": "40",
+        "top": "0",
+        "width": "60",
+        "height": "100",
+        "outline": "",
+    }
+
+    assert calcular_superficie_sector(parcela, sector) == 240
+
+
+def test_superficies_de_sectores_de_ejemplo_suman_el_area_de_la_parcela():
+    parcelas = {parcela["id"]: parcela for parcela in _crear_parcelas_demo()}
+    sectores = _crear_sectores_demo()
+
+    for parcela_id, parcela in parcelas.items():
+        superficie_sectores = sum(
+            calcular_superficie_sector(parcela, sector)
+            for sector in sectores
+            if sector["parcel_id"] == parcela_id
+        )
+
+        assert superficie_sectores == pytest.approx(float(parcela["area_m2"]))
+
+
+def test_calcular_superficie_sector_tiene_en_cuenta_el_contorno_circular():
+    parcela = {"area_m2": "100", "shape": "circulo"}
+    sector = {
+        "outline": "polygon(50% 50%, 99% 50%, 50% 98%)",
+    }
+
+    superficie = calcular_superficie_sector(parcela, sector)
+
+    assert superficie == pytest.approx(
+        100 * (49 * 48 / 2) / (math.pi * 49 * 48),
+        rel=1e-3,
+    )
 
 
 def test_sectores_afectados_muestran_los_estados_de_aviso_de_ejemplo():
