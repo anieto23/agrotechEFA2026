@@ -8,8 +8,12 @@ from agrotechEFA2026.state.dashboard_state import (
     _punto_interior_poligono,
     _ubicar_etiqueta_sector,
     PUNTOS_CUADRICULA,
+    ZOOM_MAXIMO,
+    ZOOM_MINIMO,
+    ZOOM_PASO,
     agregar_sectores_a_parcela,
     calcular_medias,
+    calcular_zoom,
     construir_contorno,
     dividir_sector,
     eliminar_parcela_de_datos,
@@ -17,6 +21,19 @@ from agrotechEFA2026.state.dashboard_state import (
     reemplazar_geometria_sector,
     validar_sector_dibujado,
 )
+
+
+@pytest.mark.parametrize(
+    ("porcentaje", "cambio", "esperado"),
+    [
+        (ZOOM_MINIMO, ZOOM_PASO, ZOOM_MINIMO + ZOOM_PASO),
+        (ZOOM_MINIMO, -ZOOM_PASO, ZOOM_MINIMO),
+        (ZOOM_MAXIMO, ZOOM_PASO, ZOOM_MAXIMO),
+        (ZOOM_MAXIMO, -ZOOM_PASO, ZOOM_MAXIMO - ZOOM_PASO),
+    ],
+)
+def test_zoom_cambia_en_pasos_y_respeta_limites(porcentaje, cambio, esperado):
+    assert calcular_zoom(porcentaje, cambio) == esperado
 
 
 def test_cuadricula_duplica_puntos_y_conserva_las_posiciones_anteriores():

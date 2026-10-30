@@ -14,6 +14,9 @@ FORMAS = {
 }
 
 PUNTOS_CUADRICULA = (7, 14, 21, 29, 36, 43, 50, 57, 64, 72, 79, 86, 93)
+ZOOM_MINIMO = 100
+ZOOM_MAXIMO = 300
+ZOOM_PASO = 25
 FORMAS_POLIGONO = {
     "poligono": [(18, 0), (83, 8), (100, 42), (76, 100), (15, 92), (0, 35)],
     "cuadrado": [(16, 0), (84, 0), (84, 100), (16, 100)],
@@ -34,6 +37,12 @@ SENSORES = (
     ("air_humidity", "Humedad ambiental", "%", "cloud", colors.SENSOR["humedad_ambiental"]),
     ("light", "Luminosidad", "lx", "sun", colors.SENSOR["luminosidad"]),
 )
+
+
+def calcular_zoom(porcentaje: int, cambio: int) -> int:
+    """Ajusta el zoom del lienzo a sus límites permitidos."""
+
+    return max(ZOOM_MINIMO, min(ZOOM_MAXIMO, porcentaje + cambio))
 
 
 def construir_contorno(vertices: list[dict[str, int]]) -> str:
@@ -700,6 +709,7 @@ class DashboardState(rx.State):
     sector_id_pendiente_eliminar: str = ""
     sector_id_redimensionar: str = ""
     modo_dibujo_sectores: bool = False
+    zoom_porcentaje: int = ZOOM_MINIMO
     contorno_sector_cerrado: bool = False
     vertices_sector_en_edicion: list[dict[str, str]] = []
     sectores_dibujados_temporales: list[dict[str, str]] = []
@@ -789,6 +799,10 @@ class DashboardState(rx.State):
             for punto in self.vertices_sector_en_edicion
         )
         return f"polygon({coordenadas})"
+
+    @rx.var
+    def ancho_lienzo_zoom(self) -> str:
+        return f"{self.zoom_porcentaje}%"
 
     @rx.var
     def lecturas_sector(self) -> list[dict[str, str]]:
@@ -887,6 +901,7 @@ class DashboardState(rx.State):
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
         self.sector_id_redimensionar = ""
+        self.zoom_porcentaje = ZOOM_MINIMO
 
     @rx.event
     def iniciar_redimension_sector(self):
@@ -902,10 +917,29 @@ class DashboardState(rx.State):
         self.contorno_sector_cerrado = False
         self.sectores_dibujados_temporales = []
         self.error_dibujo_sector = ""
+        self.zoom_porcentaje = ZOOM_MINIMO
         self.mensaje_dibujo_sector = (
             f"Dibuja el nuevo contorno de {sector['name']}. "
             "El sector actual se conservará si cancelas."
         )
+
+    @rx.event
+    def acercar_lienzo(self):
+        self.zoom_porcentaje = calcular_zoom(
+            self.zoom_porcentaje,
+            ZOOM_PASO,
+        )
+
+    @rx.event
+    def alejar_lienzo(self):
+        self.zoom_porcentaje = calcular_zoom(
+            self.zoom_porcentaje,
+            -ZOOM_PASO,
+        )
+
+    @rx.event
+    def restablecer_zoom_lienzo(self):
+        self.zoom_porcentaje = ZOOM_MINIMO
 
     @rx.event
     def agregar_vertice_sector(self, x: int, y: int):
