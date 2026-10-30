@@ -13,7 +13,7 @@ FORMAS = {
     "dibujada": "Dibujada",
 }
 
-PUNTOS_CUADRICULA = (7, 21, 36, 50, 64, 79, 93)
+PUNTOS_CUADRICULA = (7, 14, 21, 29, 36, 43, 50, 57, 64, 72, 79, 86, 93)
 FORMAS_POLIGONO = {
     "poligono": [(18, 0), (83, 8), (100, 42), (76, 100), (15, 92), (0, 35)],
     "cuadrado": [(16, 0), (84, 0), (84, 100), (16, 100)],
@@ -185,50 +185,83 @@ def _punto_en_poligono(
 def _punto_interior_poligono(
     poligono: list[tuple[float, float]],
 ) -> tuple[float, float]:
+    lados = list(zip(poligono, poligono[1:] + poligono[:1]))
     area_doble = sum(
         inicio[0] * fin[1] - fin[0] * inicio[1]
-        for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+        for inicio, fin in lados
     )
-    centroide = (
+    centro = (
         sum(
             (inicio[0] + fin[0])
             * (inicio[0] * fin[1] - fin[0] * inicio[1])
-            for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+            for inicio, fin in lados
         )
         / (3 * area_doble),
         sum(
             (inicio[1] + fin[1])
             * (inicio[0] * fin[1] - fin[0] * inicio[1])
-            for inicio, fin in zip(poligono, poligono[1:] + poligono[:1])
+            for inicio, fin in lados
         )
         / (3 * area_doble),
     )
-    if _punto_en_poligono(centroide, poligono, incluir_borde=False):
-        return centroide
 
-    coordenadas_y = sorted({punto[1] for punto in poligono})
+    def distancia_borde(punto: tuple[float, float]) -> float:
+        distancias = []
+        for inicio, fin in lados:
+            dx = fin[0] - inicio[0]
+            dy = fin[1] - inicio[1]
+            longitud_cuadrada = dx * dx + dy * dy
+            proporcion = (
+                (punto[0] - inicio[0]) * dx + (punto[1] - inicio[1]) * dy
+            ) / longitud_cuadrada
+            proporcion = min(1.0, max(0.0, proporcion))
+            proyeccion = (
+                inicio[0] + proporcion * dx,
+                inicio[1] + proporcion * dy,
+            )
+            distancias.append(math.dist(punto, proyeccion))
+        return min(distancias)
+
     mejor_punto = None
-    mejor_anchura = -1.0
-    for y_inferior, y_superior in zip(coordenadas_y, coordenadas_y[1:]):
-        y = (y_inferior + y_superior) / 2
-        intersecciones = []
-        for inicio, fin in zip(poligono, poligono[1:] + poligono[:1]):
-            if (inicio[1] > y) != (fin[1] > y):
-                intersecciones.append(
-                    inicio[0]
-                    + (fin[0] - inicio[0])
-                    * (y - inicio[1])
-                    / (fin[1] - inicio[1])
-                )
-        intersecciones.sort()
-        for izquierda, derecha in zip(intersecciones[::2], intersecciones[1::2]):
-            anchura = derecha - izquierda
-            if anchura > mejor_anchura:
-                mejor_anchura = anchura
-                mejor_punto = ((izquierda + derecha) / 2, y)
+    mejor_margen = -1.0
+    mejor_distancia_centro = math.inf
+    for y in range(1, 100, 2):
+        for x in range(1, 100, 2):
+            punto = (float(x), float(y))
+            if not _punto_en_poligono(punto, poligono, incluir_borde=False):
+                continue
+            margen = distancia_borde(punto)
+            distancia_centro = math.dist(punto, centro)
+            if margen > mejor_margen + 1e-6 or (
+                abs(margen - mejor_margen) <= 1e-6
+                and distancia_centro < mejor_distancia_centro
+            ):
+                mejor_punto = punto
+                mejor_margen = margen
+                mejor_distancia_centro = distancia_centro
 
     if mejor_punto is None:
         raise ValueError("No se pudo encontrar el interior del sector.")
+
+    paso = 1.0
+    for _ in range(6):
+        x_centro, y_centro = mejor_punto
+        for y in (y_centro - paso, y_centro, y_centro + paso):
+            for x in (x_centro - paso, x_centro, x_centro + paso):
+                punto = (x, y)
+                if not _punto_en_poligono(punto, poligono, incluir_borde=False):
+                    continue
+                margen = distancia_borde(punto)
+                distancia_centro = math.dist(punto, centro)
+                if margen > mejor_margen + 1e-6 or (
+                    abs(margen - mejor_margen) <= 1e-6
+                    and distancia_centro < mejor_distancia_centro
+                ):
+                    mejor_punto = punto
+                    mejor_margen = margen
+                    mejor_distancia_centro = distancia_centro
+        paso /= 2
+
     return mejor_punto
 
 
@@ -301,6 +334,42 @@ def _vertices_sector(sector: dict[str, str]) -> list[tuple[float, float]]:
     right = left + float(sector["width"])
     bottom = top + float(sector["height"])
     return [(left, top), (right, top), (right, bottom), (left, bottom)]
+
+
+def reemplazar_geometria_sector(
+    sectores: list[dict[str, str]],
+    parcela_id: str,
+    sector_id: str,
+    vertices: list[dict[str, int]],
+    contorno: str,
+) -> list[dict[str, str]]:
+    """Actualiza el dibujo de un sector conservando sus datos y lecturas."""
+
+    if not any(
+        sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+        for sector in sectores
+    ):
+        raise ValueError("El sector que quieres redimensionar ya no existe.")
+
+    actualizado = next(
+        sector.copy()
+        for sector in sectores
+        if sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+    )
+    actualizado["outline"] = contorno
+    actualizado["stroke_points"] = " ".join(
+        f"{vertice['x']},{vertice['y']}" for vertice in vertices
+    )
+    _ubicar_etiqueta_sector(
+        actualizado,
+        [(vertice["x"], vertice["y"]) for vertice in vertices],
+    )
+    return [
+        actualizado
+        if sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+        else sector
+        for sector in sectores
+    ]
 
 
 def validar_sector_dibujado(
@@ -423,6 +492,46 @@ def eliminar_parcela_de_datos(
         [parcela for parcela in parcelas if parcela["id"] != parcela_id],
         [sector for sector in sectores if sector["parcel_id"] != parcela_id],
     )
+
+
+def agregar_sectores_a_parcela(
+    sectores: list[dict[str, str]],
+    parcela_id: str,
+    nuevos_sectores: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Añade sectores de una parcela conservando todos los sectores existentes."""
+
+    if any(sector["parcel_id"] != parcela_id for sector in nuevos_sectores):
+        raise ValueError("Los sectores dibujados no pertenecen a esta parcela.")
+
+    ids_existentes = {sector["id"] for sector in sectores}
+    ids_nuevos = [sector["id"] for sector in nuevos_sectores]
+    if len(set(ids_nuevos)) != len(ids_nuevos) or any(
+        sector_id in ids_existentes for sector_id in ids_nuevos
+    ):
+        raise ValueError("Un sector dibujado ya existe.")
+
+    return [*sectores, *nuevos_sectores]
+
+
+def eliminar_sector_de_datos(
+    sectores: list[dict[str, str]],
+    parcela_id: str,
+    sector_id: str,
+) -> list[dict[str, str]]:
+    """Elimina un sector de la parcela indicada sin tocar los demás."""
+
+    if not any(
+        sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+        for sector in sectores
+    ):
+        raise ValueError("El sector seleccionado ya no existe en esta parcela.")
+
+    return [
+        sector
+        for sector in sectores
+        if not (sector["id"] == sector_id and sector["parcel_id"] == parcela_id)
+    ]
 
 
 def _crear_sector(
@@ -588,7 +697,8 @@ class DashboardState(rx.State):
     sector_id_seleccionado: str = ""
     sector_abierto: bool = False
     parcela_id_pendiente_eliminar: str = ""
-    confirmar_redibujo_sectores_pendiente: bool = False
+    sector_id_pendiente_eliminar: str = ""
+    sector_id_redimensionar: str = ""
     modo_dibujo_sectores: bool = False
     contorno_sector_cerrado: bool = False
     vertices_sector_en_edicion: list[dict[str, str]] = []
@@ -623,6 +733,14 @@ class DashboardState(rx.State):
             sector
             for sector in self.sectores
             if sector["parcel_id"] == self.parcela_id_seleccionada
+        ]
+
+    @rx.var
+    def sectores_visibles_en_dibujo(self) -> list[dict[str, str]]:
+        return [
+            sector
+            for sector in self.sectores_parcela
+            if sector["id"] != self.sector_id_redimensionar
         ]
 
     @rx.var
@@ -758,32 +876,36 @@ class DashboardState(rx.State):
         self.mensaje_formulario = ""
 
     @rx.event
-    def solicitar_redibujar_sectores(self):
+    def iniciar_dibujo_sectores(self):
         if not self.parcela_seleccionada:
             self.mensaje_dibujo_sector = "Abre una parcela antes de dibujar sectores."
             return
-        self.confirmar_redibujo_sectores_pendiente = True
-        self.error_dibujo_sector = ""
-        self.mensaje_dibujo_sector = ""
-
-    @rx.event
-    def cancelar_solicitud_redibujar_sectores(self):
-        self.confirmar_redibujo_sectores_pendiente = False
-
-    @rx.event
-    def confirmar_redibujar_sectores(self):
-        if (
-            not self.confirmar_redibujo_sectores_pendiente
-            or not self.parcela_seleccionada
-        ):
-            return
-        self.confirmar_redibujo_sectores_pendiente = False
         self.modo_dibujo_sectores = True
         self.vertices_sector_en_edicion = []
         self.contorno_sector_cerrado = False
         self.sectores_dibujados_temporales = []
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
+        self.sector_id_redimensionar = ""
+
+    @rx.event
+    def iniciar_redimension_sector(self):
+        sector = self.sector_seleccionado
+        if not sector or sector["parcel_id"] != self.parcela_id_seleccionada:
+            self.mensaje_sensor = "Selecciona un sector válido antes de redimensionarlo."
+            return
+
+        self.sector_id_redimensionar = sector["id"]
+        self.sector_abierto = False
+        self.modo_dibujo_sectores = True
+        self.vertices_sector_en_edicion = []
+        self.contorno_sector_cerrado = False
+        self.sectores_dibujados_temporales = []
+        self.error_dibujo_sector = ""
+        self.mensaje_dibujo_sector = (
+            f"Dibuja el nuevo contorno de {sector['name']}. "
+            "El sector actual se conservará si cancelas."
+        )
 
     @rx.event
     def agregar_vertice_sector(self, x: int, y: int):
@@ -834,7 +956,10 @@ class DashboardState(rx.State):
                     {"x": int(punto["x"]), "y": int(punto["y"])}
                     for punto in self.vertices_sector_en_edicion
                 ],
-                self.sectores_dibujados_temporales,
+                [
+                    *self.sectores_visibles_en_dibujo,
+                    *self.sectores_dibujados_temporales,
+                ],
             )
         except ValueError as error:
             self.error_dibujo_sector = str(error)
@@ -857,11 +982,38 @@ class DashboardState(rx.State):
             contorno = validar_sector_dibujado(
                 self.parcela_seleccionada,
                 vertices,
-                self.sectores_dibujados_temporales,
+                [
+                    *self.sectores_visibles_en_dibujo,
+                    *self.sectores_dibujados_temporales,
+                ],
             )
         except ValueError as error:
             self.error_dibujo_sector = str(error)
             self.mensaje_dibujo_sector = ""
+            return
+
+        if self.sector_id_redimensionar:
+            try:
+                self.sectores = reemplazar_geometria_sector(
+                    self.sectores,
+                    self.parcela_id_seleccionada,
+                    self.sector_id_redimensionar,
+                    vertices,
+                    contorno,
+                )
+            except ValueError as error:
+                self.error_dibujo_sector = str(error)
+                return
+
+            self.sector_id_seleccionado = self.sector_id_redimensionar
+            self.sector_id_redimensionar = ""
+            self.modo_dibujo_sectores = False
+            self.vertices_sector_en_edicion = []
+            self.contorno_sector_cerrado = False
+            self.error_dibujo_sector = ""
+            self.mensaje_dibujo_sector = (
+                "Sector redimensionado en esta maqueta; se conservan sus datos."
+            )
             return
 
         sector_id = str(
@@ -872,10 +1024,15 @@ class DashboardState(rx.State):
             + len(self.sectores_dibujados_temporales)
             + 1
         )
+        numero_sector = (
+            len(self.sectores_parcela)
+            + len(self.sectores_dibujados_temporales)
+            + 1
+        )
         nuevo = _crear_sector(
             sector_id,
             self.parcela_id_seleccionada,
-            f"Sector {len(self.sectores_dibujados_temporales) + 1}",
+            f"Sector {numero_sector}",
             "Sin cultivo",
             "0",
             "0",
@@ -903,6 +1060,11 @@ class DashboardState(rx.State):
     def terminar_dibujo_sectores(self):
         if not self.modo_dibujo_sectores:
             return
+        if self.sector_id_redimensionar:
+            self.error_dibujo_sector = (
+                "Aplica o cancela el redimensionamiento del sector actual."
+            )
+            return
         if self.vertices_sector_en_edicion:
             self.error_dibujo_sector = (
                 "Añade o borra el sector en edición antes de terminar."
@@ -918,17 +1080,22 @@ class DashboardState(rx.State):
         ):
             self.error_dibujo_sector = "Los sectores dibujados no pertenecen a esta parcela."
             return
-        self.sectores = [
-            sector
-            for sector in self.sectores
-            if sector["parcel_id"] != parcela_id
-        ] + self.sectores_dibujados_temporales
+        try:
+            self.sectores = agregar_sectores_a_parcela(
+                self.sectores,
+                parcela_id,
+                self.sectores_dibujados_temporales,
+            )
+        except ValueError as error:
+            self.error_dibujo_sector = str(error)
+            return
         self.sector_id_seleccionado = self.sectores_dibujados_temporales[0]["id"]
         self.sector_abierto = False
         self.modo_dibujo_sectores = False
         self.vertices_sector_en_edicion = []
         self.contorno_sector_cerrado = False
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
 
@@ -938,6 +1105,7 @@ class DashboardState(rx.State):
         self.vertices_sector_en_edicion = []
         self.contorno_sector_cerrado = False
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
 
@@ -979,18 +1147,61 @@ class DashboardState(rx.State):
         self.mensaje_formulario = "Parcela eliminada de esta maqueta."
 
     @rx.event
+    def solicitar_eliminacion_sector(self, sector_id: str):
+        if not any(
+            sector["id"] == sector_id
+            and sector["parcel_id"] == self.parcela_id_seleccionada
+            for sector in self.sectores
+        ):
+            self.mensaje_sensor = "El sector seleccionado ya no existe en esta parcela."
+            return
+        self.sector_id_pendiente_eliminar = sector_id
+        self.mensaje_sensor = ""
+
+    @rx.event
+    def cancelar_eliminacion_sector(self):
+        self.sector_id_pendiente_eliminar = ""
+
+    @rx.event
+    def confirmar_eliminacion_sector(self):
+        sector_id = self.sector_id_pendiente_eliminar
+        try:
+            self.sectores = eliminar_sector_de_datos(
+                self.sectores,
+                self.parcela_id_seleccionada,
+                sector_id,
+            )
+        except ValueError as error:
+            self.mensaje_sensor = str(error)
+            self.sector_id_pendiente_eliminar = ""
+            return
+
+        sectores_restantes = [
+            sector
+            for sector in self.sectores
+            if sector["parcel_id"] == self.parcela_id_seleccionada
+        ]
+        self.sector_id_seleccionado = (
+            sectores_restantes[0]["id"] if sectores_restantes else ""
+        )
+        self.sector_abierto = False
+        self.sector_id_pendiente_eliminar = ""
+        self.mensaje_sensor = "Sector eliminado de esta maqueta."
+
+    @rx.event
     def abrir_parcela(self, parcela_id: str):
         if not any(parcela["id"] == parcela_id for parcela in self.parcelas):
             self.mensaje_formulario = "La parcela seleccionada ya no existe."
             return
-        self.confirmar_redibujo_sectores_pendiente = False
         self.modo_dibujo_sectores = False
         self.contorno_sector_cerrado = False
         self.vertices_sector_en_edicion = []
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = parcela_id
+        self.sector_id_pendiente_eliminar = ""
         sectores = [
             sector for sector in self.sectores if sector["parcel_id"] == parcela_id
         ]
@@ -999,15 +1210,16 @@ class DashboardState(rx.State):
 
     @rx.event
     def volver_al_panel(self):
-        self.confirmar_redibujo_sectores_pendiente = False
         self.modo_dibujo_sectores = False
         self.contorno_sector_cerrado = False
         self.vertices_sector_en_edicion = []
         self.sectores_dibujados_temporales = []
+        self.sector_id_redimensionar = ""
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = ""
         self.sector_id_seleccionado = ""
+        self.sector_id_pendiente_eliminar = ""
         self.sector_abierto = False
 
     @rx.event
@@ -1021,11 +1233,13 @@ class DashboardState(rx.State):
             return
         self.sector_id_seleccionado = sector_id
         self.sector_abierto = True
+        self.sector_id_redimensionar = ""
         self.mensaje_sensor = ""
 
     @rx.event
     def volver_a_parcela(self):
         self.sector_abierto = False
+        self.sector_id_pendiente_eliminar = ""
 
     @rx.event
     def crear_parcela(self):

@@ -7,12 +7,24 @@ from agrotechEFA2026.state.dashboard_state import (
     _punto_en_poligono,
     _punto_interior_poligono,
     _ubicar_etiqueta_sector,
+    PUNTOS_CUADRICULA,
+    agregar_sectores_a_parcela,
     calcular_medias,
     construir_contorno,
     dividir_sector,
     eliminar_parcela_de_datos,
+    eliminar_sector_de_datos,
+    reemplazar_geometria_sector,
     validar_sector_dibujado,
 )
+
+
+def test_cuadricula_duplica_puntos_y_conserva_las_posiciones_anteriores():
+    posiciones_anteriores = {7, 21, 36, 50, 64, 79, 93}
+
+    assert len(PUNTOS_CUADRICULA) == 13
+    assert tuple(sorted(PUNTOS_CUADRICULA)) == PUNTOS_CUADRICULA
+    assert posiciones_anteriores.issubset(PUNTOS_CUADRICULA)
 
 
 def test_parcelas_de_ejemplo_tienen_todas_un_contorno_dibujado():
@@ -73,6 +85,26 @@ def test_etiqueta_sector_queda_dentro_de_parcela_dibujada_a_media_cuadricula():
 
     assert sector["label_x"] == "28.50"
     assert sector["label_y"] == "50.00"
+
+
+def test_etiqueta_elige_un_punto_centrado_con_margen_en_parcela_concava():
+    sector = {"label_x": "50", "label_y": "50"}
+    parcela = [
+        (7, 7),
+        (36, 7),
+        (36, 21),
+        (93, 21),
+        (93, 36),
+        (36, 36),
+        (36, 93),
+        (7, 93),
+    ]
+
+    _ubicar_etiqueta_sector(sector, parcela)
+
+    punto = (float(sector["label_x"]), float(sector["label_y"]))
+    assert _punto_en_poligono(punto, parcela, incluir_borde=False)
+    assert punto == pytest.approx((22.03, 30.44), abs=0.1)
 
 
 def test_punto_etiqueta_de_sector_concavo_queda_dentro_del_contorno():
@@ -342,3 +374,113 @@ def test_eliminar_parcela_tambien_elimina_sus_sectores_sin_afectar_otras():
 def test_eliminar_parcela_inexistente_devuelve_error_claro():
     with pytest.raises(ValueError, match="ya no existe"):
         eliminar_parcela_de_datos([{"id": "1"}], [], "no-existe")
+
+
+def test_agregar_sectores_conserva_los_existentes_y_las_otras_parcelas():
+    sectores = [
+        {"id": "10", "parcel_id": "1"},
+        {"id": "20", "parcel_id": "2"},
+    ]
+    nuevos = [{"id": "11", "parcel_id": "1"}]
+
+    assert agregar_sectores_a_parcela(sectores, "1", nuevos) == [
+        *sectores,
+        *nuevos,
+    ]
+
+
+def test_agregar_sectores_rechaza_ids_duplicados_y_otra_parcela():
+    sectores = [{"id": "10", "parcel_id": "1"}]
+
+    with pytest.raises(ValueError, match="ya existe"):
+        agregar_sectores_a_parcela(
+            sectores,
+            "1",
+            [{"id": "10", "parcel_id": "1"}],
+        )
+    with pytest.raises(ValueError, match="no pertenecen"):
+        agregar_sectores_a_parcela(
+            sectores,
+            "1",
+            [{"id": "11", "parcel_id": "2"}],
+        )
+
+
+def test_redimensionar_sector_reemplaza_solo_el_contorno_y_conserva_sus_datos():
+    sector = {
+        "id": "10",
+        "parcel_id": "1",
+        "name": "Sector 1",
+        "crop": "Tomate",
+        "temperature": "24.6",
+        "has_temperature": "yes",
+        "left": "0",
+        "top": "0",
+        "width": "50",
+        "height": "50",
+        "outline": "",
+    }
+    otro_sector = {"id": "11", "parcel_id": "1", "name": "Sector 2"}
+    vertices = [
+        {"x": 7, "y": 7},
+        {"x": 36, "y": 7},
+        {"x": 36, "y": 36},
+        {"x": 7, "y": 36},
+    ]
+
+    resultado = reemplazar_geometria_sector(
+        [sector, otro_sector],
+        "1",
+        "10",
+        vertices,
+        construir_contorno(vertices),
+    )
+
+    assert resultado[0]["outline"] == (
+        "polygon(7% 7%, 36% 7%, 36% 36%, 7% 36%)"
+    )
+    assert resultado[0]["stroke_points"] == "7,7 36,7 36,36 7,36"
+    assert resultado[0]["crop"] == "Tomate"
+    assert resultado[0]["temperature"] == "24.6"
+    assert resultado[0]["has_temperature"] == "yes"
+    assert resultado[1] == otro_sector
+    assert sector["outline"] == ""
+
+
+def test_redimensionar_sector_inexistente_devuelve_error():
+    with pytest.raises(ValueError, match="ya no existe"):
+        reemplazar_geometria_sector(
+            [{"id": "10", "parcel_id": "2"}],
+            "1",
+            "10",
+            [{"x": 7, "y": 7}, {"x": 36, "y": 7}, {"x": 36, "y": 36}],
+            "polygon(7% 7%, 36% 7%, 36% 36%)",
+        )
+
+
+def test_eliminar_sector_quita_solo_el_sector_seleccionado():
+    sectores = [
+        {"id": "10", "parcel_id": "1"},
+        {"id": "11", "parcel_id": "1"},
+        {"id": "20", "parcel_id": "2"},
+    ]
+
+    assert eliminar_sector_de_datos(sectores, "1", "10") == [
+        {"id": "11", "parcel_id": "1"},
+        {"id": "20", "parcel_id": "2"},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("parcela_id", "sector_id"),
+    [("1", "no-existe"), ("2", "10")],
+)
+def test_eliminar_sector_rechaza_sector_ausente_o_de_otra_parcela(
+    parcela_id, sector_id
+):
+    with pytest.raises(ValueError, match="ya no existe en esta parcela"):
+        eliminar_sector_de_datos(
+            [{"id": "10", "parcel_id": "1"}],
+            parcela_id,
+            sector_id,
+        )
