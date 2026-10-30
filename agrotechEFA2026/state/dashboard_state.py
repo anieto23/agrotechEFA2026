@@ -345,6 +345,144 @@ def _vertices_sector(sector: dict[str, str]) -> list[tuple[float, float]]:
     return [(left, top), (right, top), (right, bottom), (left, bottom)]
 
 
+def _area_poligono(vertices: list[tuple[float, float]]) -> float:
+    return abs(
+        sum(
+            inicio[0] * fin[1] - fin[0] * inicio[1]
+            for inicio, fin in zip(vertices, vertices[1:] + vertices[:1])
+        )
+    ) / 2
+
+
+def _area_interseccion_poligonos(
+    poligono_a: list[tuple[float, float]],
+    poligono_b: list[tuple[float, float]],
+) -> float:
+    """Calcula el área común de dos polígonos simples, incluso si son cóncavos."""
+
+    def antihorario(vertices: list[tuple[float, float]]) -> list[tuple[float, float]]:
+        area_firmada = sum(
+            inicio[0] * fin[1] - fin[0] * inicio[1]
+            for inicio, fin in zip(vertices, vertices[1:] + vertices[:1])
+        )
+        return vertices if area_firmada >= 0 else list(reversed(vertices))
+
+    poligono_a = antihorario(poligono_a)
+    poligono_b = antihorario(poligono_b)
+
+    def contribucion_borde(
+        vertices: list[tuple[float, float]],
+        otros_vertices: list[tuple[float, float]],
+        incluir_bordes_compartidos: bool,
+    ) -> float:
+        contribucion = 0.0
+        otros_lados = list(zip(otros_vertices, otros_vertices[1:] + otros_vertices[:1]))
+        for inicio, fin in zip(vertices, vertices[1:] + vertices[:1]):
+            parametros = [0.0, 1.0]
+            for otro_inicio, otro_fin in otros_lados:
+                parametros.extend(
+                    _parametros_interseccion(
+                        inicio,
+                        fin,
+                        otro_inicio,
+                        otro_fin,
+                    )
+                )
+            ordenados = sorted(parametros)
+            separados = [
+                valor
+                for indice, valor in enumerate(ordenados)
+                if indice == 0 or valor - ordenados[indice - 1] > 1e-9
+            ]
+            for desde, hasta in zip(separados, separados[1:]):
+                punto_inicio = (
+                    inicio[0] + (fin[0] - inicio[0]) * desde,
+                    inicio[1] + (fin[1] - inicio[1]) * desde,
+                )
+                punto_fin = (
+                    inicio[0] + (fin[0] - inicio[0]) * hasta,
+                    inicio[1] + (fin[1] - inicio[1]) * hasta,
+                )
+                muestra = (
+                    (punto_inicio[0] + punto_fin[0]) / 2,
+                    (punto_inicio[1] + punto_fin[1]) / 2,
+                )
+                lado_compartido = next(
+                    (
+                        (otro_inicio, otro_fin)
+                        for otro_inicio, otro_fin in otros_lados
+                        if abs(_orientacion(otro_inicio, otro_fin, muestra)) <= 1e-8
+                        and _sobre_segmento(otro_inicio, otro_fin, muestra)
+                    ),
+                    None,
+                )
+                if lado_compartido is not None:
+                    # El borde común se suma una vez si ambos interiores coinciden.
+                    if not incluir_bordes_compartidos:
+                        continue
+                    direccion = (
+                        (punto_fin[0] - punto_inicio[0])
+                        * (lado_compartido[1][0] - lado_compartido[0][0])
+                        + (punto_fin[1] - punto_inicio[1])
+                        * (lado_compartido[1][1] - lado_compartido[0][1])
+                    )
+                    if direccion <= 0:
+                        continue
+                elif not _punto_en_poligono(muestra, otros_vertices, False):
+                    continue
+                contribucion += (
+                    punto_inicio[0] * punto_fin[1]
+                    - punto_fin[0] * punto_inicio[1]
+                )
+        return contribucion
+
+    area_firmada = contribucion_borde(
+        poligono_a,
+        poligono_b,
+        incluir_bordes_compartidos=True,
+    ) + contribucion_borde(
+        poligono_b,
+        poligono_a,
+        incluir_bordes_compartidos=False,
+    )
+    return abs(area_firmada) / 2
+
+
+def calcular_superficie_sector(
+    parcela: dict[str, str], sector: dict[str, str]
+) -> float:
+    """Estima la superficie del sector según su proporción dentro de la parcela."""
+
+    try:
+        superficie_parcela = float(parcela["area_m2"])
+    except (KeyError, ValueError) as error:
+        raise ValueError("La superficie de la parcela no es válida.") from error
+    if not math.isfinite(superficie_parcela) or superficie_parcela <= 0:
+        raise ValueError("La superficie de la parcela debe ser mayor que 0 m².")
+
+    if parcela.get("shape") == "circulo":
+        contorno_parcela = [
+            (
+                50 + 49 * math.cos(2 * math.pi * indice / 128),
+                50 + 48 * math.sin(2 * math.pi * indice / 128),
+            )
+            for indice in range(128)
+        ]
+    else:
+        contorno_parcela = vertices_parcela(parcela)
+    contorno_sector = _vertices_sector(sector)
+    area_contorno_parcela = _area_poligono(contorno_parcela)
+    area_contorno_sector = _area_poligono(contorno_sector)
+
+    if area_contorno_parcela <= 0 or area_contorno_sector <= 0:
+        raise ValueError("El contorno de la parcela o del sector no tiene superficie.")
+    area_comun = _area_interseccion_poligonos(contorno_parcela, contorno_sector)
+    if area_comun <= 0:
+        raise ValueError("El sector no ocupa una superficie dentro de la parcela.")
+
+    return superficie_parcela * area_comun / area_contorno_parcela
+
+
 def reemplazar_geometria_sector(
     sectores: list[dict[str, str]],
     parcela_id: str,
@@ -763,6 +901,16 @@ class DashboardState(rx.State):
             ),
             {},
         )
+
+    @rx.var
+    def superficie_sector_m2(self) -> str:
+        if not self.parcela_seleccionada or not self.sector_seleccionado:
+            return ""
+        superficie = calcular_superficie_sector(
+            self.parcela_seleccionada,
+            self.sector_seleccionado,
+        )
+        return f"{superficie:.2f}"
 
     @rx.var
     def medias_parcela(self) -> list[dict[str, str]]:

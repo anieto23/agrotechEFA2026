@@ -776,6 +776,13 @@ def detalle_sector() -> rx.Component:
                             color=colors.TEXT,
                             size="2",
                         ),
+                        rx.text(
+                            "Superficie estimada: ",
+                            DashboardState.superficie_sector_m2,
+                            " m²",
+                            color=colors.TEXT,
+                            size="2",
+                        ),
                         spacing="1",
                         align="start",
                     ),
