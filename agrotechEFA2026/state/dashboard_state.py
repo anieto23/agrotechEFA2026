@@ -458,6 +458,26 @@ def eliminar_parcela_de_datos(
     )
 
 
+def eliminar_sector_de_datos(
+    sectores: list[dict[str, str]],
+    parcela_id: str,
+    sector_id: str,
+) -> list[dict[str, str]]:
+    """Elimina un sector de la parcela indicada sin tocar los demás."""
+
+    if not any(
+        sector["id"] == sector_id and sector["parcel_id"] == parcela_id
+        for sector in sectores
+    ):
+        raise ValueError("El sector seleccionado ya no existe en esta parcela.")
+
+    return [
+        sector
+        for sector in sectores
+        if not (sector["id"] == sector_id and sector["parcel_id"] == parcela_id)
+    ]
+
+
 def _crear_sector(
     sector_id: str,
     parcela_id: str,
@@ -621,6 +641,7 @@ class DashboardState(rx.State):
     sector_id_seleccionado: str = ""
     sector_abierto: bool = False
     parcela_id_pendiente_eliminar: str = ""
+    sector_id_pendiente_eliminar: str = ""
     confirmar_redibujo_sectores_pendiente: bool = False
     modo_dibujo_sectores: bool = False
     contorno_sector_cerrado: bool = False
@@ -1012,6 +1033,48 @@ class DashboardState(rx.State):
         self.mensaje_formulario = "Parcela eliminada de esta maqueta."
 
     @rx.event
+    def solicitar_eliminacion_sector(self, sector_id: str):
+        if not any(
+            sector["id"] == sector_id
+            and sector["parcel_id"] == self.parcela_id_seleccionada
+            for sector in self.sectores
+        ):
+            self.mensaje_sensor = "El sector seleccionado ya no existe en esta parcela."
+            return
+        self.sector_id_pendiente_eliminar = sector_id
+        self.mensaje_sensor = ""
+
+    @rx.event
+    def cancelar_eliminacion_sector(self):
+        self.sector_id_pendiente_eliminar = ""
+
+    @rx.event
+    def confirmar_eliminacion_sector(self):
+        sector_id = self.sector_id_pendiente_eliminar
+        try:
+            self.sectores = eliminar_sector_de_datos(
+                self.sectores,
+                self.parcela_id_seleccionada,
+                sector_id,
+            )
+        except ValueError as error:
+            self.mensaje_sensor = str(error)
+            self.sector_id_pendiente_eliminar = ""
+            return
+
+        sectores_restantes = [
+            sector
+            for sector in self.sectores
+            if sector["parcel_id"] == self.parcela_id_seleccionada
+        ]
+        self.sector_id_seleccionado = (
+            sectores_restantes[0]["id"] if sectores_restantes else ""
+        )
+        self.sector_abierto = False
+        self.sector_id_pendiente_eliminar = ""
+        self.mensaje_sensor = "Sector eliminado de esta maqueta."
+
+    @rx.event
     def abrir_parcela(self, parcela_id: str):
         if not any(parcela["id"] == parcela_id for parcela in self.parcelas):
             self.mensaje_formulario = "La parcela seleccionada ya no existe."
@@ -1024,6 +1087,7 @@ class DashboardState(rx.State):
         self.error_dibujo_sector = ""
         self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = parcela_id
+        self.sector_id_pendiente_eliminar = ""
         sectores = [
             sector for sector in self.sectores if sector["parcel_id"] == parcela_id
         ]
@@ -1041,6 +1105,7 @@ class DashboardState(rx.State):
         self.mensaje_dibujo_sector = ""
         self.parcela_id_seleccionada = ""
         self.sector_id_seleccionado = ""
+        self.sector_id_pendiente_eliminar = ""
         self.sector_abierto = False
 
     @rx.event
@@ -1059,6 +1124,7 @@ class DashboardState(rx.State):
     @rx.event
     def volver_a_parcela(self):
         self.sector_abierto = False
+        self.sector_id_pendiente_eliminar = ""
 
     @rx.event
     def crear_parcela(self):

@@ -12,6 +12,7 @@ from agrotechEFA2026.state.dashboard_state import (
     construir_contorno,
     dividir_sector,
     eliminar_parcela_de_datos,
+    eliminar_sector_de_datos,
     validar_sector_dibujado,
 )
 
@@ -371,3 +372,31 @@ def test_eliminar_parcela_tambien_elimina_sus_sectores_sin_afectar_otras():
 def test_eliminar_parcela_inexistente_devuelve_error_claro():
     with pytest.raises(ValueError, match="ya no existe"):
         eliminar_parcela_de_datos([{"id": "1"}], [], "no-existe")
+
+
+def test_eliminar_sector_quita_solo_el_sector_seleccionado():
+    sectores = [
+        {"id": "10", "parcel_id": "1"},
+        {"id": "11", "parcel_id": "1"},
+        {"id": "20", "parcel_id": "2"},
+    ]
+
+    assert eliminar_sector_de_datos(sectores, "1", "10") == [
+        {"id": "11", "parcel_id": "1"},
+        {"id": "20", "parcel_id": "2"},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("parcela_id", "sector_id"),
+    [("1", "no-existe"), ("2", "10")],
+)
+def test_eliminar_sector_rechaza_sector_ausente_o_de_otra_parcela(
+    parcela_id, sector_id
+):
+    with pytest.raises(ValueError, match="ya no existe en esta parcela"):
+        eliminar_sector_de_datos(
+            [{"id": "10", "parcel_id": "1"}],
+            parcela_id,
+            sector_id,
+        )

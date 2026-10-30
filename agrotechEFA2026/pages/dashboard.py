@@ -732,6 +732,51 @@ def detalle_sector() -> rx.Component:
                     width="100%",
                     aria_label="Cultivo del sector",
                 ),
+                rx.button(
+                    "Eliminar sector",
+                    on_click=DashboardState.solicitar_eliminacion_sector(
+                        DashboardState.sector_seleccionado["id"]
+                    ),
+                    color_scheme="red",
+                    variant="soft",
+                ),
+                rx.cond(
+                    DashboardState.sector_id_pendiente_eliminar
+                    == DashboardState.sector_seleccionado["id"],
+                    rx.callout(
+                        rx.vstack(
+                            rx.text(
+                                "¿Eliminar este sector y sus sensores y lecturas "
+                                "de ejemplo? La acción solo afecta a esta maqueta.",
+                                color=colors.TEXT,
+                                size="2",
+                            ),
+                            rx.hstack(
+                                rx.button(
+                                    "Cancelar",
+                                    on_click=DashboardState.cancelar_eliminacion_sector,
+                                    variant="soft",
+                                    width="100%",
+                                ),
+                                rx.button(
+                                    "Confirmar eliminación",
+                                    on_click=DashboardState.confirmar_eliminacion_sector,
+                                    color_scheme="red",
+                                    width="100%",
+                                ),
+                                width="100%",
+                                wrap="wrap",
+                            ),
+                            spacing="2",
+                            align="start",
+                            width="100%",
+                        ),
+                        icon="triangle_alert",
+                        color_scheme="orange",
+                        width="100%",
+                    ),
+                    rx.fragment(),
+                ),
                 spacing="3",
                 align="start",
                 width="100%",
