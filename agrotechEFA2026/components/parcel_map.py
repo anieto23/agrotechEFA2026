@@ -95,9 +95,8 @@ def sector_cell(sector: dict[str, rx.Var]) -> rx.Component:
     )
 
 
-def parcela_map() -> rx.Component:
-    """Vista esquemática de la forma y los sectores de una parcela."""
-
+def contorno_parcela_svg() -> rx.Component:
+    """Dibuja el borde de la parcela seleccionada."""
     forma = DashboardState.parcela_seleccionada["shape"]
     puntos_contorno = rx.cond(
         forma == "dibujada",
@@ -112,6 +111,43 @@ def parcela_map() -> rx.Component:
             ),
         ),
     )
+
+    return rx.el.svg(
+        rx.cond(
+            forma == "circulo",
+            rx.el.ellipse(
+                cx="50",
+                cy="50",
+                rx="49",
+                ry="48",
+                fill="none",
+                stroke=colors.TEXT,
+                stroke_width="2",
+                vector_effect="non-scaling-stroke",
+            ),
+            rx.el.polygon(
+                points=puntos_contorno,
+                fill="none",
+                stroke=colors.TEXT,
+                stroke_width="2",
+                vector_effect="non-scaling-stroke",
+            ),
+        ),
+        position="absolute",
+        top="0",
+        left="0",
+        width="100%",
+        height="100%",
+        view_box="0 0 100 100",
+        preserve_aspect_ratio="none",
+        pointer_events="none",
+    )
+
+
+def parcela_map() -> rx.Component:
+    """Vista esquemática de la forma y los sectores de una parcela."""
+
+    forma = DashboardState.parcela_seleccionada["shape"]
     recorte = rx.cond(
         forma == "dibujada",
         DashboardState.parcela_seleccionada["outline"],
@@ -142,36 +178,7 @@ def parcela_map() -> rx.Component:
             clip_path=recorte,
             background="#202020",
         ),
-        rx.el.svg(
-            rx.cond(
-                forma == "circulo",
-                rx.el.ellipse(
-                    cx="50",
-                    cy="50",
-                    rx="49",
-                    ry="48",
-                    fill="none",
-                    stroke=colors.TEXT,
-                    stroke_width="2",
-                    vector_effect="non-scaling-stroke",
-                ),
-                rx.el.polygon(
-                    points=puntos_contorno,
-                    fill="none",
-                    stroke=colors.TEXT,
-                    stroke_width="2",
-                    vector_effect="non-scaling-stroke",
-                ),
-            ),
-            position="absolute",
-            top="0",
-            left="0",
-            width="100%",
-            height="100%",
-            view_box="0 0 100 100",
-            preserve_aspect_ratio="none",
-            pointer_events="none",
-        ),
+        contorno_parcela_svg(),
         position="relative",
         width="100%",
         max_width=rx.cond(forma == "circulo", "480px", "760px"),

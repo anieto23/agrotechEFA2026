@@ -458,6 +458,26 @@ def eliminar_parcela_de_datos(
     )
 
 
+def agregar_sectores_a_parcela(
+    sectores: list[dict[str, str]],
+    parcela_id: str,
+    nuevos_sectores: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Añade sectores de una parcela conservando todos los sectores existentes."""
+
+    if any(sector["parcel_id"] != parcela_id for sector in nuevos_sectores):
+        raise ValueError("Los sectores dibujados no pertenecen a esta parcela.")
+
+    ids_existentes = {sector["id"] for sector in sectores}
+    ids_nuevos = [sector["id"] for sector in nuevos_sectores]
+    if len(set(ids_nuevos)) != len(ids_nuevos) or any(
+        sector_id in ids_existentes for sector_id in ids_nuevos
+    ):
+        raise ValueError("Un sector dibujado ya existe.")
+
+    return [*sectores, *nuevos_sectores]
+
+
 def eliminar_sector_de_datos(
     sectores: list[dict[str, str]],
     parcela_id: str,
@@ -642,7 +662,6 @@ class DashboardState(rx.State):
     sector_abierto: bool = False
     parcela_id_pendiente_eliminar: str = ""
     sector_id_pendiente_eliminar: str = ""
-    confirmar_redibujo_sectores_pendiente: bool = False
     modo_dibujo_sectores: bool = False
     contorno_sector_cerrado: bool = False
     vertices_sector_en_edicion: list[dict[str, str]] = []
@@ -812,26 +831,10 @@ class DashboardState(rx.State):
         self.mensaje_formulario = ""
 
     @rx.event
-    def solicitar_redibujar_sectores(self):
+    def iniciar_dibujo_sectores(self):
         if not self.parcela_seleccionada:
             self.mensaje_dibujo_sector = "Abre una parcela antes de dibujar sectores."
             return
-        self.confirmar_redibujo_sectores_pendiente = True
-        self.error_dibujo_sector = ""
-        self.mensaje_dibujo_sector = ""
-
-    @rx.event
-    def cancelar_solicitud_redibujar_sectores(self):
-        self.confirmar_redibujo_sectores_pendiente = False
-
-    @rx.event
-    def confirmar_redibujar_sectores(self):
-        if (
-            not self.confirmar_redibujo_sectores_pendiente
-            or not self.parcela_seleccionada
-        ):
-            return
-        self.confirmar_redibujo_sectores_pendiente = False
         self.modo_dibujo_sectores = True
         self.vertices_sector_en_edicion = []
         self.contorno_sector_cerrado = False
@@ -888,7 +891,10 @@ class DashboardState(rx.State):
                     {"x": int(punto["x"]), "y": int(punto["y"])}
                     for punto in self.vertices_sector_en_edicion
                 ],
-                self.sectores_dibujados_temporales,
+                [
+                    *self.sectores_parcela,
+                    *self.sectores_dibujados_temporales,
+                ],
             )
         except ValueError as error:
             self.error_dibujo_sector = str(error)
@@ -911,7 +917,10 @@ class DashboardState(rx.State):
             contorno = validar_sector_dibujado(
                 self.parcela_seleccionada,
                 vertices,
-                self.sectores_dibujados_temporales,
+                [
+                    *self.sectores_parcela,
+                    *self.sectores_dibujados_temporales,
+                ],
             )
         except ValueError as error:
             self.error_dibujo_sector = str(error)
@@ -926,10 +935,15 @@ class DashboardState(rx.State):
             + len(self.sectores_dibujados_temporales)
             + 1
         )
+        numero_sector = (
+            len(self.sectores_parcela)
+            + len(self.sectores_dibujados_temporales)
+            + 1
+        )
         nuevo = _crear_sector(
             sector_id,
             self.parcela_id_seleccionada,
-            f"Sector {len(self.sectores_dibujados_temporales) + 1}",
+            f"Sector {numero_sector}",
             "Sin cultivo",
             "0",
             "0",
@@ -972,11 +986,15 @@ class DashboardState(rx.State):
         ):
             self.error_dibujo_sector = "Los sectores dibujados no pertenecen a esta parcela."
             return
-        self.sectores = [
-            sector
-            for sector in self.sectores
-            if sector["parcel_id"] != parcela_id
-        ] + self.sectores_dibujados_temporales
+        try:
+            self.sectores = agregar_sectores_a_parcela(
+                self.sectores,
+                parcela_id,
+                self.sectores_dibujados_temporales,
+            )
+        except ValueError as error:
+            self.error_dibujo_sector = str(error)
+            return
         self.sector_id_seleccionado = self.sectores_dibujados_temporales[0]["id"]
         self.sector_abierto = False
         self.modo_dibujo_sectores = False
@@ -1079,7 +1097,6 @@ class DashboardState(rx.State):
         if not any(parcela["id"] == parcela_id for parcela in self.parcelas):
             self.mensaje_formulario = "La parcela seleccionada ya no existe."
             return
-        self.confirmar_redibujo_sectores_pendiente = False
         self.modo_dibujo_sectores = False
         self.contorno_sector_cerrado = False
         self.vertices_sector_en_edicion = []
@@ -1096,7 +1113,6 @@ class DashboardState(rx.State):
 
     @rx.event
     def volver_al_panel(self):
-        self.confirmar_redibujo_sectores_pendiente = False
         self.modo_dibujo_sectores = False
         self.contorno_sector_cerrado = False
         self.vertices_sector_en_edicion = []

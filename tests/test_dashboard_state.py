@@ -8,6 +8,7 @@ from agrotechEFA2026.state.dashboard_state import (
     _punto_interior_poligono,
     _ubicar_etiqueta_sector,
     PUNTOS_CUADRICULA,
+    agregar_sectores_a_parcela,
     calcular_medias,
     construir_contorno,
     dividir_sector,
@@ -372,6 +373,36 @@ def test_eliminar_parcela_tambien_elimina_sus_sectores_sin_afectar_otras():
 def test_eliminar_parcela_inexistente_devuelve_error_claro():
     with pytest.raises(ValueError, match="ya no existe"):
         eliminar_parcela_de_datos([{"id": "1"}], [], "no-existe")
+
+
+def test_agregar_sectores_conserva_los_existentes_y_las_otras_parcelas():
+    sectores = [
+        {"id": "10", "parcel_id": "1"},
+        {"id": "20", "parcel_id": "2"},
+    ]
+    nuevos = [{"id": "11", "parcel_id": "1"}]
+
+    assert agregar_sectores_a_parcela(sectores, "1", nuevos) == [
+        *sectores,
+        *nuevos,
+    ]
+
+
+def test_agregar_sectores_rechaza_ids_duplicados_y_otra_parcela():
+    sectores = [{"id": "10", "parcel_id": "1"}]
+
+    with pytest.raises(ValueError, match="ya existe"):
+        agregar_sectores_a_parcela(
+            sectores,
+            "1",
+            [{"id": "10", "parcel_id": "1"}],
+        )
+    with pytest.raises(ValueError, match="no pertenecen"):
+        agregar_sectores_a_parcela(
+            sectores,
+            "1",
+            [{"id": "11", "parcel_id": "2"}],
+        )
 
 
 def test_eliminar_sector_quita_solo_el_sector_seleccionado():
